@@ -193,9 +193,6 @@ Needs DSM 7.2 or later with **Container Manager** installed.
 3. The containers show up in Container Manager, where you can see their logs and
    restart them. Update from SSH as above.
 
-Container Manager must bring Docker Compose 2.23.1 or later (`docker compose version`);
-the install script checks. Update Container Manager in Package Center if it is older.
-
 The Tailscale sidecar runs in its own container, so it works whether or not the
 Tailscale package from Package Center is installed on the NAS; the NAS and the app
 show up as two machines in your tailnet. If you'd rather use the NAS's own Tailscale
