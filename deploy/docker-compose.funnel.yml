@@ -1,0 +1,45 @@
+# Optional: publishes only the calendar feed to the internet with Tailscale Funnel,
+# so Google Calendar (which fetches feeds from Google's servers, not from your
+# tailnet) can subscribe. A second Tailscale node, https://<TS_FEED_HOSTNAME>.<your-tailnet>.ts.net,
+# answers only under /api/app/feed/ and returns 404 for everything else, so the app,
+# sign-in and the admin UI stay on your tailnet.
+# Enabled by adding :docker-compose.funnel.yml to COMPOSE_FILE in .env (see docs/deploy.md).
+
+services:
+  app:
+    environment:
+      # The public address the app uses for the feed's subscribe link.
+      CALIO_FEED_URL: ${CALIO_FEED_URL:-}
+
+  tailscale-feed:
+    image: tailscale/tailscale:stable
+    hostname: ${TS_FEED_HOSTNAME:-calio-feed}
+    restart: unless-stopped
+    depends_on: [app]
+    environment:
+      # Only needed for the first start; the login is kept in ./tailscale-feed.
+      TS_AUTHKEY: ${TS_FEED_AUTHKEY:-}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_SERVE_CONFIG: /config/serve.json
+    volumes:
+      - ./tailscale-feed:/var/lib/tailscale
+    configs:
+      - source: feed-serve
+        target: /config/serve.json
+    mem_limit: 128m
+
+configs:
+  # Funnel on port 443 of the feed node, with one handler: the feed path, forwarded
+  # to the same path on the app. Tailscale strips the mount point and the proxy
+  # adds it back, so /api/app/feed/x.ics reaches the app as /api/app/feed/x.ics.
+  feed-serve:
+    content: |
+      {
+        "TCP": { "443": { "HTTPS": true } },
+        "Web": {
+          "$${TS_CERT_DOMAIN}:443": {
+            "Handlers": { "/api/app/feed/": { "Proxy": "http://app:8090/api/app/feed" } }
+          }
+        },
+        "AllowFunnel": { "$${TS_CERT_DOMAIN}:443": true }
+      }

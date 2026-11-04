@@ -14,7 +14,7 @@ app=calio
 repo=${CALIO_REPO:-selfhostit/calio}
 source=${CALIO_SOURCE:-https://raw.githubusercontent.com/$repo/main/deploy}
 dir=${1:-${CALIO_DIR:-$HOME/$app}}
-files="docker-compose.yml docker-compose.tailscale.yml .env.example"
+files="docker-compose.yml docker-compose.tailscale.yml docker-compose.funnel.yml .env.example"
 
 say() { printf '\033[1m%s\033[0m\n' "$*"; }
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
@@ -37,6 +37,11 @@ fetch() {
 
 command -v docker >/dev/null || die "Docker is not installed: https://docs.docker.com/engine/install/"
 docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is missing: https://docs.docker.com/compose/install/linux/"
+# The Tailscale sidecars keep their settings inline in the compose files (configs: content:).
+compose=$(docker compose version --short 2>/dev/null | sed 's/^v//')
+if [ "$compose" != 2.23.1 ] && printf '%s\n2.23.1\n' "$compose" | sort -V -C 2>/dev/null; then
+	die "Docker Compose $compose is too old; 2.23.1 or later is needed (on a Synology, update Container Manager)"
+fi
 docker info >/dev/null 2>&1 || die "cannot talk to Docker; run this as a user in the docker group, or with sudo"
 
 say "Installing $app in $dir"
