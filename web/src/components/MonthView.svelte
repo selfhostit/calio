@@ -7,6 +7,7 @@
     longDayLabel,
     monthGrid,
     monthName,
+    occurrences,
     span,
     type Day,
     type Entry,
@@ -31,6 +32,7 @@
   let month = $state(dateOf(selected).getMonth());
 
   const days = $derived(monthGrid(year, month));
+  const shown = $derived(occurrences(entries, days[0], days[days.length - 1]));
   const weeks = $derived(Array.from({ length: 6 }, (_, i) => days.slice(i * 7, i * 7 + 7)));
   const LANES = 3;
 
@@ -39,7 +41,7 @@
   const layout = $derived(
     weeks.map((week) => {
       const [from, to] = [week[0], week[6]];
-      const inWeek = entries
+      const inWeek = shown
         .filter((e) => {
           const [first, last] = span(e);
           return first <= to && last >= from;
@@ -64,7 +66,11 @@
     }),
   );
 
-  const dayEntries = $derived(entries.filter((e) => isOn(e, selected)).sort(byStart));
+  const dayEntries = $derived(
+    occurrences(entries, selected, selected)
+      .filter((e) => isOn(e, selected))
+      .sort(byStart),
+  );
 
   function move(n: number) {
     const d = new Date(year, month + n, 1);
@@ -170,7 +176,7 @@
   </div>
   {#if dayEntries.length}
     <div class="-mx-3 flex flex-col">
-      {#each dayEntries as entry (entry.id)}<EntryRow {entry} {onopen} />{/each}
+      {#each dayEntries as entry (entry.key ?? entry.id)}<EntryRow {entry} {onopen} />{/each}
     </div>
   {:else}
     <p class="text-sm text-zinc-500">Nothing on this day.</p>

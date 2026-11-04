@@ -18,7 +18,27 @@ export interface Entry extends RecordModel {
   sitter: string;
   sitter_status: SitterStatus | '';
   created_by: string;
+  repeat: Repeat | '';
+  repeat_until: string;
+  checklist: ChecklistItem[] | null;
+  /** Set on a repeat of an entry: a key unique to that occurrence. */
+  key?: string;
 }
+
+export type Repeat = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+export interface ChecklistItem {
+  text: string;
+  done: boolean;
+}
+
+export const REPEATS: { repeat: Repeat | ''; label: string }[] = [
+  { repeat: '', label: 'Never' },
+  { repeat: 'daily', label: 'Every day' },
+  { repeat: 'weekly', label: 'Every week' },
+  { repeat: 'monthly', label: 'Every month' },
+  { repeat: 'yearly', label: 'Every year' },
+];
 
 export const KINDS: { kind: Kind; label: string; plural: string }[] = [
   { kind: 'event', label: 'Event', plural: 'Events' },
@@ -78,6 +98,59 @@ export function isOn(e: Entry, day: Day): boolean {
   const [first, last] = span(e);
   return first <= day && day <= last;
 }
+
+/**
+ * The day of the nth repeat after `first`, or null for a month or year that
+ * doesn't have that day (the 31st, or 29 February), which is skipped.
+ */
+export function nthRepeat(first: Day, repeat: Repeat, n: number): Day | null {
+  const [y, m, d] = first.split('-').map(Number);
+  if (repeat === 'daily') return addDays(first, n);
+  if (repeat === 'weekly') return addDays(first, 7 * n);
+  const date = repeat === 'monthly' ? new Date(y, m - 1 + n, d) : new Date(y + n, m - 1, d);
+  return date.getDate() === d ? dayOf(date) : null;
+}
+
+/**
+ * Entries as they happen between two days: a repeating entry becomes one copy
+ * per repeat, moved to its day and keyed by it.
+ */
+export function occurrences(entries: Entry[], from: Day, to: Day): Entry[] {
+  const out: Entry[] = [];
+  for (const e of entries) {
+    if (!e.repeat) {
+      out.push(e);
+      continue;
+    }
+    const [first, last] = span(e);
+    const length = Math.round((dateOf(last).getTime() - dateOf(first).getTime()) / 864e5);
+    const until = e.repeat_until ? e.repeat_until.slice(0, 10) : '9999-12-31';
+    for (let n = 0; n < 100_000; n++) {
+      const day = n === 0 ? first : nthRepeat(first, e.repeat, n);
+      if (day === null) continue;
+      if (day > to || day > until) break;
+      if (addDays(day, length) >= from) out.push(n === 0 ? { ...e, key: e.id } : moveTo(e, day, n));
+    }
+  }
+  return out;
+}
+
+/** A copy of an entry moved to another first day, keeping its times. */
+function moveTo(e: Entry, day: Day, n: number): Entry {
+  const [first] = span(e);
+  const shift = (s: string) => {
+    if (!s) return s;
+    if (e.all_day) return allDayValue(addDays(s.slice(0, 10), daysBetween(first, day)));
+    const d = parseDate(s)!;
+    const moved = dateOf(addDays(dayOf(d), daysBetween(first, day)));
+    moved.setHours(d.getHours(), d.getMinutes(), d.getSeconds());
+    return moved.toISOString().replace('T', ' ');
+  };
+  return { ...e, start: shift(e.start), end: shift(e.end), key: `${e.id}:${n}` };
+}
+
+const daysBetween = (a: Day, b: Day) =>
+  Math.round((dateOf(b).getTime() - dateOf(a).getTime()) / 864e5);
 
 /** Sorts entries by when they start, all-day ones first on the same day. */
 export function byStart(a: Entry, b: Entry): number {
@@ -180,4 +253,28 @@ export function localInputValue(s: string): string {
   const d = parseDate(s);
   if (!d) return '';
   return `${dayOf(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ---- Places ----
+
+/**
+ * A link that opens a location in Google Maps. A pasted map link is used as
+ * it is; an address or "lat, lon" is searched for.
+ */
+export function mapLink(location: string): string {
+  const l = location.trim();
+  if (/^https?:\/\//i.test(l)) return l;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l)}`;
+}
+
+/** What to show for a location: a pasted link reads as "Map". */
+export function placeLabel(location: string): string {
+  return /^https?:\/\//i.test(location.trim()) ? 'Map' : location;
+}
+
+/** "3/12" for a checklist, or '' when there is none. */
+export function checklistLabel(e: Pick<Entry, 'checklist'>): string {
+  const items = e.checklist ?? [];
+  if (!items.length) return '';
+  return `${items.filter((i) => i.done).length}/${items.length}`;
 }

@@ -23,6 +23,11 @@ own phone and sees the same calendar, live.
   stays at the top of the app until someone books it.
 - **Trips**: where you're going, who's going and where you're staying. Adding a trip can
   add pet sitting for the same dates in one step.
+- **Repeating entries**: every day, week, month or year, until a date if you like.
+- **Checklists**: a packing list on every trip (start from the last trip's list), and a
+  checklist on anything else. Ticking items saves right away, so it works while you pack.
+- **Map links**: a place can be an address, "lat, lon" or a pasted map link, and opens in
+  Google Maps.
 - **Upcoming and month views**, filtered by kind, in light and dark mode.
 - **Notifications**: everyone else hears when something is added or a sitter is booked,
   and at 07:30 a morning summary lists what's on today and sitting that still needs someone.

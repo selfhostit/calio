@@ -5,6 +5,7 @@
     KINDS,
     longDayLabel,
     isOn,
+    occurrences,
     progressLabel,
     type Day,
     type Entry,
@@ -37,7 +38,11 @@
   const entries = $derived(
     filter === 'all' ? calendar.entries : calendar.entries.filter((e) => e.kind === filter),
   );
-  const today = $derived(calendar.entries.filter((e) => isOn(e, calendar.today)));
+  const today = $derived(
+    occurrences(calendar.entries, calendar.today, calendar.today).filter((e) =>
+      isOn(e, calendar.today),
+    ),
+  );
   const away = $derived(today.find((e) => e.kind === 'trip'));
 
   $effect(() => {
@@ -53,7 +58,12 @@
     return () => calendar.stop();
   });
 
-  const open = (entry: Entry) => (sheet = { entry, day: calendar.today });
+  // a repeat opens the entry it repeats, so edits apply to all of them
+  const open = (entry: Entry) =>
+    (sheet = {
+      entry: calendar.entries.find((e) => e.id === entry.id) ?? entry,
+      day: calendar.today,
+    });
   const add = (day: Day = view === 'month' ? selected : calendar.today) =>
     (sheet = { entry: null, day });
 
@@ -87,7 +97,7 @@
     <h1 class="mt-0.5 text-3xl font-bold tracking-tight">{summary}</h1>
     {#if today.length}
       <div class="mt-3 flex flex-wrap gap-1.5">
-        {#each today.slice(0, 4) as e (e.id)}
+        {#each today.slice(0, 4) as e (e.key ?? e.id)}
           <button
             class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-zinc-200 bg-white py-1 pr-3 pl-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             onclick={() => open(e)}
