@@ -3,10 +3,10 @@
 @theme {
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   /* the brand color: change these to restyle every button and link */
-  --color-brand-400: var(--color-indigo-400);
-  --color-brand-500: var(--color-indigo-500);
-  --color-brand-600: var(--color-indigo-600);
-  --color-brand-700: var(--color-indigo-700);
+  --color-brand-400: var(--color-violet-400);
+  --color-brand-500: var(--color-violet-500);
+  --color-brand-600: var(--color-violet-600);
+  --color-brand-700: var(--color-violet-700);
 }
 
 @layer base {

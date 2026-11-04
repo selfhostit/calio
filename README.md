@@ -1,6 +1,34 @@
-# calio
+<div align="center">
 
-A self-hosted app built on [plasto](https://github.com/selfhostit/plasto).
+<img src="web/public/icons/icon.svg" width="88" alt="">
+
+# Calio
+
+**Your household on one calendar: plans, pet sitting and trips,<br>
+running on your own hardware.**
+
+<img src="docs/images/upcoming.png" width="200" alt="The upcoming list, with a trip in progress and a pet sitter still needed">&nbsp;
+<img src="docs/images/month.png" width="200" alt="The month view, with trips and pet sitting as bars across the days">&nbsp;
+<img src="docs/images/add.png" width="200" alt="Adding pet sitting">&nbsp;
+<img src="docs/images/upcoming-dark.png" width="200" alt="The upcoming list in dark mode">
+
+</div>
+
+Calio is a shared calendar for the people you live with. Everyone signs in on their
+own phone and sees the same calendar, live.
+
+- **Events** for dinners, appointments and anything else, with a time and a place.
+- **Pet sitting**: the days someone needs to look after the pets, who the sitter is, and
+  whether they are still needed, asked or booked. Unbooked sitting in the next two weeks
+  stays at the top of the app until someone books it.
+- **Trips**: where you're going, who's going and where you're staying. Adding a trip can
+  add pet sitting for the same dates in one step.
+- **Upcoming and month views**, filtered by kind, in light and dark mode.
+- **Notifications**: everyone else hears when something is added or a sitter is booked,
+  and at 07:30 a morning summary lists what's on today and sitting that still needs someone.
+
+Calio is built on [plasto](https://github.com/selfhostit/plasto): one small container,
+no account anywhere else, and your data stays in `pb_data` on your machine.
 
 ## Quick start
 

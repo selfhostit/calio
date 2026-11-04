@@ -3,6 +3,11 @@
 calio is a self-hosted app built on the plasto template: a Go backend on PocketBase (`backend/`)
 serving a Svelte 5 + Tailwind web app (`web/`).
 
+Calio is a household calendar. Everything on it is a record in the `entries` collection
+with a `kind`: `event`, `petsit` (with `sitter` and `sitter_status`) or `trip`. All-day
+entries store their dates at midnight UTC and are read as plain calendar dates; timed
+entries are real instants (`web/src/lib/entries.ts`, `days` in `backend/app/entries.go`).
+
 ## Commands
 
 - `make dev`: run the backend (:8090) and the web app (:5173) with live reload
