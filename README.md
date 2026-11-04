@@ -28,6 +28,10 @@ own phone and sees the same calendar, live.
   checklist on anything else. Ticking items saves right away, so it works while you pack.
 - **Map links**: a place can be an address, "lat, lon" or a pasted map link, and opens in
   Google Maps.
+- **A calendar feed** to subscribe to from Apple Calendar, Outlook or Google Calendar
+  (Settings > Calendar feed). Each person's link has its own secret and can be replaced.
+  Google Calendar needs the feed reachable from the internet: set `CALIO_FEED_URL` to a
+  public address that serves only `/api/app/feed/` (for example through Tailscale Funnel).
 - **Upcoming and month views**, filtered by kind, in light and dark mode.
 - **Notifications**: everyone else hears when something is added or a sitter is booked,
   and at 07:30 a morning summary lists what's on today and sitting that still needs someone.
