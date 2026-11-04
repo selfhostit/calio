@@ -1,6 +1,6 @@
 // Service worker: keeps the app shell cached so the app opens instantly, even
 // offline. API calls and the admin UI always go to the network.
-const CACHE = 'shell-v2';
+const CACHE = 'shell-v3';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {

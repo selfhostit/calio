@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Calio</title>
   <rect width="512" height="512" rx="112" fill="#4f46e5"/>
-  <rect x="112" y="132" width="288" height="264" rx="48" fill="#fff"/>
-  <rect x="112" y="186" width="288" height="18" fill="#e0e7ff"/>
-  <rect x="172" y="104" width="28" height="68" rx="14" fill="#fff"/>
-  <rect x="312" y="104" width="28" height="68" rx="14" fill="#fff"/>
-  <circle cx="190" cy="270" r="24" fill="#a5b4fc"/>
-  <circle cx="256" cy="270" r="24" fill="#fcd34d"/>
-  <circle cx="322" cy="270" r="24" fill="#5eead4"/>
-  <rect x="164" y="320" width="184" height="24" rx="12" fill="#e4e4e7"/>
+  <g id="mark">
+    <path d="M256 100 L400 206 V370 Q400 408 362 408 H150 Q112 408 112 370 V206 Z" fill="#fff" stroke="#fff" stroke-width="28" stroke-linejoin="round"/>
+    <circle cx="256" cy="176" r="24" fill="#c7d2fe"/>
+    <rect x="98" y="226" width="316" height="16" fill="#e0e7ff"/>
+    <path d="M184 242V394M256 242V394M328 242V394" stroke="#eef2ff" stroke-width="6"/>
+    <rect x="140" y="256" width="160" height="36" rx="18" fill="#818cf8"/>
+    <rect x="212" y="306" width="160" height="36" rx="18" fill="#2dd4bf"/>
+    <rect x="140" y="356" width="104" height="36" rx="18" fill="#fbbf24"/>
+  </g>
 </svg>
