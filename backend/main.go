@@ -1,4 +1,4 @@
-// Command plasto runs the app: the PocketBase API, the database and the web
+// Command calio runs the app: the PocketBase API, the database and the web
 // app built into ./pb_public, in one process.
 package main
 
@@ -9,8 +9,8 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 
-	"github.com/selfhostit/plasto/app"
-	_ "github.com/selfhostit/plasto/migrations"
+	"github.com/selfhostit/calio/app"
+	_ "github.com/selfhostit/calio/migrations"
 )
 
 func main() {

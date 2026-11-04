@@ -1,6 +1,6 @@
 # Changelog
 
-What changed in each release of plasto. Installs update to the newest release; see
+What changed in each release of calio. Installs update to the newest release; see
 [docs/deploy.md](docs/deploy.md#updates-and-versions).
 
 ## Unreleased

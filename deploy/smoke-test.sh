@@ -3,7 +3,7 @@
 # docker-compose.yml in a scratch folder, signs up the owner, creates a worker
 # account, runs one worker round and checks that the worker reported in.
 #
-#   PLASTO_IMAGE=plasto:dev PLASTO_WORKER_IMAGE=plasto-worker:dev deploy/smoke-test.sh
+#   CALIO_IMAGE=calio:dev CALIO_WORKER_IMAGE=calio-worker:dev deploy/smoke-test.sh
 #
 # Set EXPECT_VERSION to also check the version the app reports.
 set -eu
@@ -28,13 +28,13 @@ step() { echo "--- $*"; }
 cp "$here/docker-compose.yml" "$dir/"
 mkdir "$dir/pb_data"
 cat >"$dir/.env" <<ENV
-PLASTO_IMAGE=${PLASTO_IMAGE:-ghcr.io/selfhostit/plasto:latest}
-PLASTO_WORKER_IMAGE=${PLASTO_WORKER_IMAGE:-ghcr.io/selfhostit/plasto-worker:latest}
+CALIO_IMAGE=${CALIO_IMAGE:-ghcr.io/selfhostit/calio:latest}
+CALIO_WORKER_IMAGE=${CALIO_WORKER_IMAGE:-ghcr.io/selfhostit/calio-worker:latest}
 PUID=$(id -u)
 PGID=$(id -g)
 PORT=$port
-PLASTO_WORKER=smoke
-PLASTO_WORKER_PASSWORD=smoke-worker-pw
+CALIO_WORKER=smoke
+CALIO_WORKER_PASSWORD=smoke-worker-pw
 ENV
 cd "$dir"
 

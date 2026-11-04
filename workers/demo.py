@@ -3,7 +3,7 @@
 Everyone else gets a push notification for each one (backend/app/demo.go).
 Run it with:
 
-    PLASTO_WORKER=demo PLASTO_WORKER_PASSWORD=... uv run python demo.py
+    CALIO_WORKER=demo CALIO_WORKER_PASSWORD=... uv run python demo.py
 
 scripts/strip-demo.sh removes it.
 """

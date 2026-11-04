@@ -1,4 +1,4 @@
-module github.com/selfhostit/plasto
+module github.com/selfhostit/calio
 
 go 1.27
 

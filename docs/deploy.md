@@ -1,6 +1,6 @@
 # Deploy
 
-A plasto app runs as one container on any Linux machine with Docker: a NAS, a
+A calio app runs as one container on any Linux machine with Docker: a NAS, a
 Raspberry Pi, a small server. Workers run next to it or on other machines.
 Tailscale gives your devices an `https://` address for it without opening
 anything to the internet.
@@ -12,8 +12,8 @@ anything to the internet.
                      worker on a Pi ──Tailscale────────┘
 ```
 
-Two images are published for amd64, arm64 and armv7: `ghcr.io/selfhostit/plasto` (the
-app) and `ghcr.io/selfhostit/plasto-worker` (the Python workers). A release tag like
+Two images are published for amd64, arm64 and armv7: `ghcr.io/selfhostit/calio` (the
+app) and `ghcr.io/selfhostit/calio-worker` (the Python workers). A release tag like
 `v1.2.0` publishes `:1.2.0`, `:1.2`, `:1` and `:latest` of both; installs follow `:latest`,
 so they only update to a release. Every push to `main` publishes `:edge` and the commit
 hash, for trying out what's next. Each image comes with a signed
@@ -24,13 +24,13 @@ hash, for trying out what's next. Each image comes with a signed
 On the machine, as a user that can run `docker`:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/selfhostit/plasto/main/deploy/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/selfhostit/calio/main/deploy/install.sh | sh
 ```
 
-This creates `~/plasto` with the compose files, a `.env` and a `pb_data` folder
+This creates `~/calio` with the compose files, a `.env` and a `pb_data` folder
 for the database, asks for a Tailscale auth key (press Enter to skip, or set an
 empty `TS_AUTHKEY=` to skip the question), and starts the app. Pass a folder to
-install elsewhere: `... | sh -s /srv/plasto`.
+install elsewhere: `... | sh -s /srv/calio`.
 
 Then open the app and create your account with the setup code the installer shows
 (it is also in `docker compose logs app`); you become the owner. Only someone who can
@@ -50,7 +50,7 @@ install script again).
 2. Create an [auth key](https://login.tailscale.com/admin/settings/keys) and paste it
    when the install script asks. It is only used for the first sign-in; the
    sidecar keeps its login in `tailscale/`.
-3. The app is now at `https://plasto.<your-tailnet>.ts.net` (the script prints it).
+3. The app is now at `https://calio.<your-tailnet>.ts.net` (the script prints it).
    The first visit can take a few seconds while the certificate is issued.
 
 On a phone, install the Tailscale app, open that address and add it to the home
@@ -62,14 +62,14 @@ To add Tailscale later, set `TS_AUTHKEY` and uncomment the `COMPOSE_FILE` line i
 ## Updates and versions
 
 ```sh
-cd ~/plasto && docker compose pull && docker compose up -d
+cd ~/calio && docker compose pull && docker compose up -d
 ```
 
 Running the install script again does the same and also refreshes the compose
 files. Updates bring the newest release, listed with what changed in
 [CHANGELOG.md](../CHANGELOG.md). To stay on a release line, or go back to a release, set
-`PLASTO_IMAGE` (and `PLASTO_WORKER_IMAGE`) in `.env` to a tag, like
-`ghcr.io/selfhostit/plasto:1` (every 1.x) or `ghcr.io/selfhostit/plasto:1.2.0`. Use `:edge`
+`CALIO_IMAGE` (and `CALIO_WORKER_IMAGE`) in `.env` to a tag, like
+`ghcr.io/selfhostit/calio:1` (every 1.x) or `ghcr.io/selfhostit/calio:1.2.0`. Use `:edge`
 to follow `main`. Database migrations run on start, so take a backup before going back
 across one.
 
@@ -79,7 +79,7 @@ Every published image has a signed attestation that says which workflow run, in 
 repository and at which commit, built it. With the [GitHub CLI](https://cli.github.com):
 
 ```sh
-gh attestation verify oci://ghcr.io/selfhostit/plasto:latest --repo selfhostit/plasto
+gh attestation verify oci://ghcr.io/selfhostit/calio:latest --repo selfhostit/calio
 ```
 
 It fails if the image was not built by this repository's CI, for example if someone pushed one by hand.
@@ -109,12 +109,12 @@ there.
 
 1. In the admin UI, open the **workers** collection and add one with a name and a
    password.
-2. In `.env`, set `PLASTO_WORKER` and `PLASTO_WORKER_PASSWORD` and uncomment
+2. In `.env`, set `CALIO_WORKER` and `CALIO_WORKER_PASSWORD` and uncomment
    `COMPOSE_PROFILES=worker`.
 3. Run `docker compose up -d`.
 
 It runs `workers/worker.py`, the starting point for your own worker. To run another
-one, set `PLASTO_WORKER_SCRIPT` in `.env`, for example to `camera.py`. Every `.py`
+one, set `CALIO_WORKER_SCRIPT` in `.env`, for example to `camera.py`. Every `.py`
 file in `workers/` and every dependency you add with `uv add` is in the worker image.
 
 ### On another machine
@@ -124,9 +124,9 @@ address:
 
 ```sh
 docker run -d --name worker --restart unless-stopped \
-  -e PLASTO_URL=https://plasto.<your-tailnet>.ts.net \
-  -e PLASTO_WORKER=camera -e PLASTO_WORKER_PASSWORD=... -e TZ=Europe/Athens \
-  ghcr.io/selfhostit/plasto-worker python camera.py
+  -e CALIO_URL=https://calio.<your-tailnet>.ts.net \
+  -e CALIO_WORKER=camera -e CALIO_WORKER_PASSWORD=... -e TZ=Europe/Athens \
+  ghcr.io/selfhostit/calio-worker python camera.py
 ```
 
 ## Synology NAS
@@ -137,7 +137,7 @@ Needs DSM 7.2 or later with **Container Manager** installed.
    `ssh you@nas.local`.
 2. Install into a shared folder, with `sudo` because Docker on DSM needs it:
    ```sh
-   curl -fsSL https://raw.githubusercontent.com/selfhostit/plasto/main/deploy/install.sh | sudo sh -s /volume1/docker/plasto
+   curl -fsSL https://raw.githubusercontent.com/selfhostit/calio/main/deploy/install.sh | sudo sh -s /volume1/docker/calio
    ```
    The data stays owned by your DSM user (`PUID` and `PGID` in `.env`), so you can
    see and back it up in File Station.

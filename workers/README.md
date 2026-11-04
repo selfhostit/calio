@@ -1,6 +1,6 @@
-# plasto workers
+# calio workers
 
-Workers are Python programs that do the heavy lifting for a plasto app: object
+Workers are Python programs that do the heavy lifting for a calio app: object
 detection, scraping, calling an LLM, crunching data. They run next to the app or
 on another machine (a Raspberry Pi with a camera, say), sign in with a worker
 account, and read and write records through the app's API. The app reacts to
@@ -20,7 +20,7 @@ Start from `worker.py`, or add a file next to it:
 ```python
 from plasto_worker import Client, every
 
-app = Client()  # reads PLASTO_URL, PLASTO_WORKER and PLASTO_WORKER_PASSWORD
+app = Client()  # reads CALIO_URL, CALIO_WORKER and CALIO_WORKER_PASSWORD
 
 
 def check():
@@ -54,7 +54,7 @@ You need [uv](https://docs.astral.sh/uv/).
 
 ```sh
 cd workers
-PLASTO_URL=http://localhost:8090 PLASTO_WORKER=... PLASTO_WORKER_PASSWORD=... uv run python worker.py
+CALIO_URL=http://localhost:8090 CALIO_WORKER=... CALIO_WORKER_PASSWORD=... uv run python worker.py
 ```
 
 Add `--once` for a single round.

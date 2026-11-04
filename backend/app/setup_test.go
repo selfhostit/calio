@@ -10,11 +10,11 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 
-	"github.com/selfhostit/plasto/app"
-	_ "github.com/selfhostit/plasto/migrations"
+	"github.com/selfhostit/calio/app"
+	_ "github.com/selfhostit/calio/migrations"
 )
 
-// newApp starts an empty app with the plasto migrations and routes.
+// newApp starts an empty app with the calio migrations and routes.
 func newApp(t testing.TB) *tests.TestApp {
 	testApp, err := tests.NewTestAppWithConfig(core.BaseAppConfig{DataDir: t.TempDir()})
 	if err != nil {

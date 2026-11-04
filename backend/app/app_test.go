@@ -7,7 +7,7 @@ import (
 
 	"github.com/pocketbase/pocketbase/tests"
 
-	"github.com/selfhostit/plasto/app"
+	"github.com/selfhostit/calio/app"
 )
 
 func TestRoutes(t *testing.T) {
@@ -34,7 +34,7 @@ func TestRoutes(t *testing.T) {
 			Method:          http.MethodGet,
 			URL:             "/some/client/route",
 			ExpectedStatus:  http.StatusOK,
-			ExpectedContent: []string{"plasto test page"},
+			ExpectedContent: []string{"calio test page"},
 			TestAppFactory:  setup,
 		},
 		{
@@ -42,7 +42,7 @@ func TestRoutes(t *testing.T) {
 			Method:          http.MethodGet,
 			URL:             "/",
 			ExpectedStatus:  http.StatusOK,
-			ExpectedContent: []string{"plasto test page"},
+			ExpectedContent: []string{"calio test page"},
 			TestAppFactory:  setup,
 			AfterTestFunc: func(t testing.TB, _ *tests.TestApp, res *http.Response) {
 				if csp := res.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "script-src 'self';") {

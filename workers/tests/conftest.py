@@ -1,4 +1,4 @@
-"""Starts a real plasto server for the tests, built from ../backend."""
+"""Starts a real calio server for the tests, built from ../backend."""
 
 import os
 import socket
@@ -20,10 +20,10 @@ def _free_port() -> int:
 
 @pytest.fixture(scope="session")
 def server(tmp_path_factory):
-    tmp = tmp_path_factory.mktemp("plasto")
-    binary = os.environ.get("PLASTO_BIN")
+    tmp = tmp_path_factory.mktemp("calio")
+    binary = os.environ.get("CALIO_BIN")
     if not binary:
-        binary = str(tmp / "plasto")
+        binary = str(tmp / "calio")
         subprocess.run(["go", "build", "-o", binary, "."], cwd=ROOT / "backend", check=True)
 
     data, port = tmp / "pb_data", _free_port()

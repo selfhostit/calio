@@ -14,8 +14,8 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 
-	_ "github.com/selfhostit/plasto/migrations"
-	"github.com/selfhostit/plasto/push"
+	_ "github.com/selfhostit/calio/migrations"
+	"github.com/selfhostit/calio/push"
 )
 
 func newApp(t testing.TB) *tests.TestApp {

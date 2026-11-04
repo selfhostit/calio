@@ -1,6 +1,6 @@
 package migrations
 
-// DEMO: the items list that shows every part of plasto working together.
+// DEMO: the items list that shows every part of calio working together.
 // scripts/strip-demo.sh removes it; keep your own migrations in other files.
 
 import (
