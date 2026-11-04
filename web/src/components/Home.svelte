@@ -69,39 +69,30 @@
 </script>
 
 <div class="mx-auto flex min-h-dvh w-full max-w-3xl flex-col">
-  <header
-    class="relative overflow-hidden px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-6 text-white"
-  >
-    <div
-      class="absolute inset-0 -z-10 bg-gradient-to-br from-violet-600 via-fuchsia-500 to-orange-400 sm:rounded-b-3xl"
-    ></div>
-    <div class="absolute -top-16 -right-10 -z-10 size-56 rounded-full bg-white/10 blur-2xl"></div>
+  <header class="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-2">
     <div class="flex items-center justify-between">
-      <span class="inline-flex items-center gap-2 text-lg font-extrabold tracking-tight">
-        <img src="/icons/icon.svg" alt="" class="size-7 rounded-lg ring-1 ring-white/30" /> Calio
+      <span class="inline-flex items-center gap-2 text-lg font-bold tracking-tight">
+        <img src="/icons/icon.svg" alt="" class="size-7 rounded-lg" /> Calio
       </span>
       <button class="rounded-full" onclick={() => (settings = true)} aria-label="Settings">
         <Avatar person={session.user!} size="size-9 text-sm" />
       </button>
     </div>
-    <p class="mt-6 text-sm font-medium text-white/80">
+    <p class="mt-6 text-sm font-medium text-zinc-500 dark:text-zinc-400">
       {longDayLabel(calendar.today)}{#if away}&nbsp;· away, {progressLabel(
           away,
           calendar.today,
         ).toLowerCase() || 'today'}{/if}
     </p>
-    <h1 class="mt-0.5 text-3xl font-extrabold tracking-tight">{summary}</h1>
+    <h1 class="mt-0.5 text-3xl font-bold tracking-tight">{summary}</h1>
     {#if today.length}
       <div class="mt-3 flex flex-wrap gap-1.5">
         {#each today.slice(0, 4) as e (e.id)}
           <button
-            class="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/20 py-1 pr-3 pl-1.5 text-sm font-medium backdrop-blur hover:bg-white/30"
+            class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-zinc-200 bg-white py-1 pr-3 pl-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             onclick={() => open(e)}
           >
-            <span
-              class="grid size-5 place-items-center rounded-full bg-white/90 {LOOK[e.kind].tile
-                .split(' ')
-                .find((c) => c.startsWith('text-'))}"
+            <span class="grid size-5 place-items-center rounded-full {LOOK[e.kind].tile}"
               ><Icon name={LOOK[e.kind].icon} class="size-3.5" /></span
             >
             <span class="truncate">{e.title}</span>
@@ -131,7 +122,7 @@
         <button
           class="shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition {filter ===
           'all'
-            ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
+            ? 'border-zinc-300 bg-zinc-100 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100'
             : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'}"
           onclick={() => (filter = 'all')}>All</button
         >
@@ -143,8 +134,7 @@
               : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'}"
             onclick={() => (filter = filter === k.kind ? 'all' : k.kind)}
           >
-            <span class="size-2 rounded-full {filter === k.kind ? 'bg-white' : LOOK[k.kind].dot}"
-            ></span>
+            <span class="size-2 rounded-full {LOOK[k.kind].dot}"></span>
             {k.plural}
           </button>
         {/each}
@@ -174,11 +164,11 @@
   </main>
 
   <button
-    class="fixed right-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white shadow-xl shadow-violet-500/30 transition hover:scale-105 active:scale-95 sm:right-[max(1.25rem,calc(50vw-24rem+1.25rem))]"
+    class="fixed right-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 grid size-14 place-items-center rounded-full bg-brand-600 text-white shadow-lg shadow-zinc-900/20 transition hover:bg-brand-700 active:scale-95 sm:right-[max(1.25rem,calc(50vw-24rem+1.25rem))]"
     onclick={() => add()}
     aria-label="Add to the calendar"
   >
-    <Icon name="plus" class="size-7" />
+    <Icon name="plus" class="size-6" />
   </button>
 </div>
 

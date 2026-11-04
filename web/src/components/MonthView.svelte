@@ -116,7 +116,7 @@
           {@const isSelected = day === selected}
           <button
             class="relative flex min-h-16 flex-col gap-0.5 py-1 text-left transition sm:min-h-24 {isSelected
-              ? 'bg-violet-50 dark:bg-violet-500/10'
+              ? 'bg-zinc-100 dark:bg-zinc-800/70'
               : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'} {i > 0
               ? 'border-l border-zinc-100 dark:border-zinc-800/70'
               : ''}"
@@ -127,7 +127,7 @@
           >
             <span
               class="mx-auto grid size-7 place-items-center rounded-full text-sm sm:mx-1.5 {isToday
-                ? 'bg-violet-600 font-bold text-white'
+                ? 'bg-brand-600 font-semibold text-white'
                 : inMonth
                   ? 'font-medium'
                   : 'text-zinc-300 dark:text-zinc-600'}">{dateOf(day).getDate()}</span
@@ -138,9 +138,9 @@
                 {@const starts = first === day || i === 0}
                 {@const ends = last === day || i === 6}
                 <span
-                  class="block h-1.5 truncate px-1.5 text-[11px] leading-5 font-semibold sm:h-5 {LOOK[
+                  class="block h-1.5 truncate px-1.5 text-[11px] leading-5 font-medium sm:h-5 {LOOK[
                     e.kind
-                  ].pill} {starts ? 'ml-1 rounded-l-full' : '-ml-px'} {ends
+                  ].pill} {LOOK[e.kind].bar} {starts ? 'ml-1 rounded-l-full' : '-ml-px'} {ends
                     ? 'mr-1 rounded-r-full'
                     : ''} {inMonth ? '' : 'opacity-40'}"
                 >
@@ -164,7 +164,7 @@
   <div class="mt-2 flex items-center justify-between">
     <h3 class="font-semibold">{longDayLabel(selected)}</h3>
     <button
-      class="inline-flex items-center gap-1 text-sm font-semibold text-violet-600 dark:text-violet-400"
+      class="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 dark:text-brand-400"
       onclick={() => onadd(selected)}><Icon name="plus" class="size-4" /> Add</button
     >
   </div>
