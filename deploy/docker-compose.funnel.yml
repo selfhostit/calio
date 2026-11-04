@@ -23,23 +23,8 @@ services:
       TS_SERVE_CONFIG: /config/serve.json
     volumes:
       - ./tailscale-feed:/var/lib/tailscale
-    configs:
-      - source: feed-serve
-        target: /config/serve.json
+      # Funnel on port 443 with one handler: the feed path, forwarded to the same
+      # path on the app. Tailscale strips the mount point and the proxy adds it
+      # back, so /api/app/feed/x.ics reaches the app as /api/app/feed/x.ics.
+      - ./tailscale-feed-serve.json:/config/serve.json:ro
     mem_limit: 128m
-
-configs:
-  # Funnel on port 443 of the feed node, with one handler: the feed path, forwarded
-  # to the same path on the app. Tailscale strips the mount point and the proxy
-  # adds it back, so /api/app/feed/x.ics reaches the app as /api/app/feed/x.ics.
-  feed-serve:
-    content: |
-      {
-        "TCP": { "443": { "HTTPS": true } },
-        "Web": {
-          "$${TS_CERT_DOMAIN}:443": {
-            "Handlers": { "/api/app/feed/": { "Proxy": "http://app:8090/api/app/feed" } }
-          }
-        },
-        "AllowFunnel": { "$${TS_CERT_DOMAIN}:443": true }
-      }
