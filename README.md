@@ -140,7 +140,9 @@ publishes that version.
 ## Security and maintenance
 
 - **Not on the internet:** the container listens on `127.0.0.1` only; reach it through
-  Tailscale or your own reverse proxy with HTTPS (`deploy/docker-compose.yml`).
+  Tailscale or your own reverse proxy with HTTPS (`deploy/docker-compose.yml`). The only
+  optional exception is the calendar feed, which Tailscale Funnel can publish on its own
+  for Google Calendar (`deploy/docker-compose.funnel.yml`).
 - **Locked-down container:** runs as a normal user, drops every Linux capability and
   can't gain new ones.
 - **Nobody claims a new install before you:** the first account needs the one-time setup

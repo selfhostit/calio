@@ -59,6 +59,55 @@ screen. Push notifications need this HTTPS address.
 To add Tailscale later, set `TS_AUTHKEY` and uncomment the `COMPOSE_FILE` line in
 `.env`, then run `docker compose up -d`. `TS_HOSTNAME` sets the name.
 
+Nothing is open to the internet: only devices signed in to your tailnet can reach
+the app, and the port on the machine is bound to `127.0.0.1`. To let someone else
+in the household use it, [share the machine](https://tailscale.com/kb/1084/sharing)
+or invite them to the tailnet.
+
+### Calendar feed
+
+The app has a calendar feed (an `.ics` link the app shows you) that calendar apps
+subscribe to. Apple Calendar, Outlook, Thunderbird and DAVx⁵ fetch it from your
+own device, so they work over Tailscale with the normal address.
+
+Google Calendar is different: Google's servers fetch the feed, and they are not on
+your tailnet. For that, Calio can publish **only the feed** to the internet with
+[Tailscale Funnel](https://tailscale.com/kb/1223/funnel). It runs a second, small
+Tailscale node, `https://calio-feed.<your-tailnet>.ts.net`, whose only route is
+`/api/app/feed/`; every other path there answers 404, so sign-in, the app and the
+admin UI stay tailnet-only. The feed link has a long random token in it, which is
+the only thing that protects it, so treat the link like a password and reset it
+in the app if it leaks. Skip this if you don't use Google Calendar.
+
+1. In the [access controls](https://login.tailscale.com/admin/acls/file), allow
+   Funnel. The admin console offers to add it the first time; by hand, add this to
+   the policy file:
+   ```json
+   "nodeAttrs": [{ "target": ["autogroup:member"], "attr": ["funnel"] }]
+   ```
+2. Create a second [auth key](https://login.tailscale.com/admin/settings/keys) (or
+   make the first one reusable) and set it in `.env`:
+   ```sh
+   COMPOSE_FILE=docker-compose.yml:docker-compose.tailscale.yml:docker-compose.funnel.yml
+   TS_FEED_AUTHKEY=tskey-auth-...
+   ```
+3. Run `docker compose up -d`. The feed node's address is the app's address with
+   `calio-feed` in place of `calio` (it is also listed under Machines in the admin
+   console). Set it so the app shows the public link:
+   ```sh
+   CALIO_FEED_URL=https://calio-feed.<your-tailnet>.ts.net
+   ```
+   and run `docker compose up -d` again.
+4. In Google Calendar, go to Other calendars > **+** > From URL and paste the feed
+   link from the app. Google refreshes it every few hours, not instantly.
+
+Check it from a device that is *not* on your tailnet (a phone on mobile data with
+Tailscale off): the feed link downloads a calendar, and
+`https://calio-feed.<your-tailnet>.ts.net/` shows a 404. Public DNS for a new Funnel
+name can take up to ten minutes. To turn it off, remove `:docker-compose.funnel.yml`
+from `COMPOSE_FILE`, run `docker compose up -d --remove-orphans`, and remove the
+`calio-feed` machine in the admin console.
+
 ## Updates and versions
 
 ```sh
@@ -96,8 +145,8 @@ The app backs up the database and uploads every night at 03:00 and keeps the
 last 7, in `pb_data/backups`. A backup on the same disk doesn't survive the disk,
 so copy `pb_data` somewhere else too (Hyper Backup on a Synology, `rsync`, or S3
 storage set in the admin UI under Settings > Backups). Encrypt any copy that leaves
-the machine, and leave out the `tailscale` folder: it holds the machine's Tailscale
-key, which lets whoever has it join your tailnet as that machine.
+the machine, and leave out the `tailscale` and `tailscale-feed` folders: they hold the machine's Tailscale
+keys, which let whoever has them join your tailnet as those machines.
 
 To restore, open the admin UI (`/_/`), go to Settings > Backups and restore one.
 To move to another machine, stop the app, copy the whole folder, and start it
@@ -143,6 +192,23 @@ Needs DSM 7.2 or later with **Container Manager** installed.
    see and back it up in File Station.
 3. The containers show up in Container Manager, where you can see their logs and
    restart them. Update from SSH as above.
+
+Container Manager must bring Docker Compose 2.23.1 or later (`docker compose version`);
+the install script checks. Update Container Manager in Package Center if it is older.
+
+The Tailscale sidecar runs in its own container, so it works whether or not the
+Tailscale package from Package Center is installed on the NAS; the NAS and the app
+show up as two machines in your tailnet. If you'd rather use the NAS's own Tailscale
+package and no sidecar, leave `COMPOSE_FILE` commented out and run, over SSH:
+
+```sh
+sudo tailscale serve --bg http://127.0.0.1:8090
+```
+
+The app is then at `https://<nas-name>.<your-tailnet>.ts.net`. Funnel for the feed
+still works with the feed sidecar alone: set
+`COMPOSE_FILE=docker-compose.yml:docker-compose.funnel.yml`. Don't turn on Funnel for
+the NAS itself, because that would publish the whole app and DSM.
 
 To serve the app on the internet instead of only your tailnet, add a rule under
 Control Panel > Login Portal > Advanced > Reverse Proxy from your HTTPS host name
