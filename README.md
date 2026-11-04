@@ -1,6 +1,34 @@
-# calio
+<div align="center">
 
-A self-hosted app built on [plasto](https://github.com/selfhostit/plasto).
+<img src="web/public/icons/icon.svg" width="88" alt="">
+
+# Calio
+
+**Your household on one calendar: plans, pet sitting and trips,<br>
+running on your own hardware.**
+
+<img src="docs/images/upcoming.png" width="200" alt="The upcoming list, with a trip in progress and a pet sitter still needed">&nbsp;
+<img src="docs/images/month.png" width="200" alt="The month view, with trips and pet sitting as bars across the days">&nbsp;
+<img src="docs/images/add.png" width="200" alt="Adding pet sitting">&nbsp;
+<img src="docs/images/upcoming-dark.png" width="200" alt="The upcoming list in dark mode">
+
+</div>
+
+Calio is a shared calendar for the people you live with. Everyone signs in on their
+own phone and sees the same calendar, live.
+
+- **Events** for dinners, appointments and anything else, with a time and a place.
+- **Pet sitting**: the days someone needs to look after the pets, who the sitter is, and
+  whether they are still needed, asked or booked. Unbooked sitting in the next two weeks
+  stays at the top of the app until someone books it.
+- **Trips**: where you're going, who's going and where you're staying. Adding a trip can
+  add pet sitting for the same dates in one step.
+- **Upcoming and month views**, filtered by kind, in light and dark mode.
+- **Notifications**: everyone else hears when something is added or a sitter is booked,
+  and at 07:30 a morning summary lists what's on today and sitting that still needs someone.
+
+Calio is built on [plasto](https://github.com/selfhostit/plasto): one small container,
+no account anywhere else, and your data stays in `pb_data` on your machine.
 
 ## Quick start
 
@@ -36,11 +64,6 @@ email and password. Add more people there, in the `users` collection.
 - **Python workers** for the heavy lifting (ML, scraping, LLMs), on this machine or
   another. They sign in with a worker account and read and write records through
   the API; see [workers/README.md](workers/README.md).
-<!-- DEMO start -->
-- **A demo** that uses every piece: a live items list on the home screen, a worker
-  that adds to it, and a push notification for each new item.
-  `scripts/strip-demo.sh` removes it.
-<!-- DEMO end -->
 - **An installable app.** It installs to a phone's home screen or a desktop, opens
   offline from its cached shell, and follows the system's light or dark mode.
 

@@ -41,8 +41,12 @@ func MustAdd(app core.App, name, cronExpr string, fn Func) {
 	}
 	app.Cron().MustAdd(name, cronExpr, func() { Run(app, name, fn) })
 
+	// The check is quick and runs before serving starts, so it never outlives
+	// the app (tests start and stop many); only a missed run goes in the background.
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
-		go catchUp(se.App, name, schedule, fn, time.Now())
+		if due(se.App, name, schedule, time.Now()) {
+			go Run(se.App, name, fn)
+		}
 		return se.Next()
 	})
 }
@@ -100,12 +104,20 @@ func record(app core.App, name string, start time.Time, took time.Duration, runE
 // catchUp runs the job if a scheduled time passed since its last run. A job
 // seen for the first time is only recorded, so adding one doesn't run it.
 func catchUp(app core.App, name string, schedule *cron.Schedule, fn Func, now time.Time) {
+	if due(app, name, schedule, now) {
+		Run(app, name, fn)
+	}
+}
+
+// due reports whether a scheduled time passed since the job's last run, and
+// records a job seen for the first time.
+func due(app core.App, name string, schedule *cron.Schedule, now time.Time) bool {
 	rec, err := app.FindFirstRecordByData(Collection, "name", name)
 	if err != nil {
 		col, err := app.FindCollectionByNameOrId(Collection)
 		if err != nil {
 			app.Logger().Error("Jobs collection missing", "error", err)
-			return
+			return false
 		}
 		rec = core.NewRecord(col)
 		rec.Set("name", name)
@@ -113,13 +125,14 @@ func catchUp(app core.App, name string, schedule *cron.Schedule, fn Func, now ti
 		if err := app.Save(rec); err != nil {
 			app.Logger().Error("Could not record new job", "job", name, "error", err)
 		}
-		return
+		return false
 	}
 	last := rec.GetDateTime("last_run").Time()
-	if missed(schedule, last, now) {
-		app.Logger().Info("Catching up on a missed job run", "job", name, "last_run", last)
-		Run(app, name, fn)
+	if !missed(schedule, last, now) {
+		return false
 	}
+	app.Logger().Info("Catching up on a missed job run", "job", name, "last_run", last)
+	return true
 }
 
 // missed reports whether the schedule was due at any minute after last, up to

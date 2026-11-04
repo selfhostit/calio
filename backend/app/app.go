@@ -26,8 +26,7 @@ type Config struct {
 func Register(app core.App, cfg Config) {
 	// scheduled jobs and backups follow the server's time zone (TZ)
 	app.Cron().SetTimezone(time.Local)
-
-	registerDemo(app) // DEMO
+	registerEntries(app)
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/api/app/info", info)
