@@ -59,11 +59,6 @@ CALIO_URL=http://localhost:8090 CALIO_WORKER=... CALIO_WORKER_PASSWORD=... uv ru
 
 Add `--once` for a single round.
 
-<!-- DEMO start -->
-`demo.py` adds an item to the demo list every five minutes; the app shows it
-live and sends everyone else a push notification.
-<!-- DEMO end -->
-
 ## Tests
 
 `uv run pytest` builds the app from `../backend`, starts it on a free port and
