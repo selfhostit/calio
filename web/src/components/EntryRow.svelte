@@ -14,16 +14,16 @@
       ? entry.sitter_status === 'booked'
         ? {
             text: entry.sitter ? `${entry.sitter} booked` : 'Booked',
-            cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
+            cls: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-300',
           }
         : entry.sitter_status === 'asked'
           ? {
               text: entry.sitter ? `Asked ${entry.sitter}` : 'Asked',
-              cls: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
+              cls: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
             }
           : {
               text: 'Sitter needed',
-              cls: 'bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-300',
+              cls: 'bg-amber-50 text-amber-800 dark:bg-amber-400/10 dark:text-amber-300',
             }
       : null,
   );
@@ -56,7 +56,7 @@
     {#if status || progress}
       <span class="mt-1 flex flex-wrap gap-1.5 text-xs font-medium">
         {#if progress}<span
-            class="rounded-full bg-zinc-900 px-2 py-0.5 text-white dark:bg-white dark:text-zinc-900"
+            class="rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
             >{progress}</span
           >{/if}
         {#if status}<span class="rounded-full px-2 py-0.5 {status.cls}">{status.text}</span>{/if}

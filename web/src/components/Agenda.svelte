@@ -32,27 +32,26 @@
   <section class="flex flex-col gap-2">
     {#each unbooked as e (e.id)}
       <div
-        class="flex items-center gap-3 rounded-2xl border border-amber-300/70 bg-gradient-to-r from-amber-50 to-orange-50 p-3 dark:border-amber-500/30 dark:from-amber-500/10 dark:to-orange-500/10"
+        class="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-400/20 dark:bg-amber-400/5"
       >
         <span
-          class="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-400 text-amber-950"
+          class="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"
         >
           <Icon name="paw" />
         </span>
         <button class="min-w-0 flex-1 text-left" onclick={() => onopen(e)}>
-          <span class="block font-semibold text-amber-950 dark:text-amber-100"
+          <span class="block font-semibold text-zinc-900 dark:text-zinc-100"
             >Sitter needed: {e.title}</span
           >
-          <span class="block text-sm text-amber-800 dark:text-amber-300/80"
+          <span class="block text-sm text-zinc-600 dark:text-zinc-400"
             >{whenLabel(e)} · starts {inDays(span(e)[0], calendar.today)}{e.sitter_status ===
               'asked' && e.sitter
               ? ` · asked ${e.sitter}`
               : ''}</span
           >
         </button>
-        <button
-          class="shrink-0 rounded-xl bg-amber-950/90 px-3 py-2 text-sm font-semibold text-amber-50 hover:bg-amber-950 dark:bg-amber-400 dark:text-amber-950"
-          onclick={() => book(e)}>Booked</button
+        <button class="btn-secondary shrink-0 px-3 py-2 text-sm" onclick={() => book(e)}
+          >Booked</button
         >
       </div>
     {/each}
@@ -80,15 +79,15 @@
   <div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
     <div class="flex gap-2">
       <span
-        class="grid size-12 -rotate-6 place-items-center rounded-2xl bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300"
+        class="grid size-12 -rotate-6 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-400/10 dark:text-indigo-300"
         ><Icon name="sparkle" /></span
       >
       <span
-        class="grid size-12 place-items-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300"
+        class="grid size-12 place-items-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300"
         ><Icon name="paw" /></span
       >
       <span
-        class="grid size-12 rotate-6 place-items-center rounded-2xl bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-300"
+        class="grid size-12 rotate-6 place-items-center rounded-2xl bg-teal-50 text-teal-700 dark:bg-teal-400/10 dark:text-teal-300"
         ><Icon name="plane" /></span
       >
     </div>

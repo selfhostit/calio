@@ -7,7 +7,7 @@
 
 {#if person}
   <span
-    class="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white ring-2 ring-white dark:ring-zinc-900 {avatarColor(
+    class="inline-flex shrink-0 items-center justify-center rounded-full font-semibold ring-2 ring-white dark:ring-zinc-900 {avatarColor(
       person.id,
     )} {size}"
     title={person.name || person.email}

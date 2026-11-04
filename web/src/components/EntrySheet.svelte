@@ -138,7 +138,7 @@
           aria-checked={kind === k.kind}
           class="flex flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 text-sm font-semibold transition {kind ===
           k.kind
-            ? LOOK[k.kind].chip + ' shadow-md'
+            ? LOOK[k.kind].chip
             : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300'}"
           onclick={() => pick(k.kind)}
         >
@@ -221,7 +221,7 @@
             <button
               type="button"
               class="inline-flex items-center gap-2 rounded-full border py-1 pr-3 pl-1 text-sm font-medium transition {on
-                ? 'border-violet-500 bg-violet-50 text-violet-900 dark:bg-violet-500/15 dark:text-violet-100'
+                ? 'border-brand-400 bg-brand-500/10 text-zinc-900 dark:text-zinc-100'
                 : 'border-zinc-200 text-zinc-500 dark:border-zinc-700'}"
               aria-pressed={on}
               onclick={() => togglePerson(p.id)}
@@ -236,7 +236,7 @@
 
     {#if kind === 'trip' && !editing}
       <label
-        class="flex-row items-center gap-3 rounded-2xl border border-amber-300/70 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10"
+        class="flex-row items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50"
       >
         <input type="checkbox" bind:checked={needSitter} />
         <span class="flex-1">
@@ -245,7 +245,7 @@
             >Adds pet sitting for the same dates.</span
           >
         </span>
-        <Icon name="paw" class="size-5 text-amber-600" />
+        <Icon name="paw" class="size-5 text-amber-600 dark:text-amber-300" />
       </label>
     {/if}
 
