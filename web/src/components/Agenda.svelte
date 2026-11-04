@@ -1,6 +1,15 @@
 <script lang="ts">
   import { calendar } from '../lib/calendar.svelte';
-  import { addDays, agenda, dayLabel, inDays, span, whenLabel, type Entry } from '../lib/entries';
+  import {
+    addDays,
+    agenda,
+    occurrences,
+    dayLabel,
+    inDays,
+    span,
+    whenLabel,
+    type Entry,
+  } from '../lib/entries';
   import EntryRow from './EntryRow.svelte';
   import Icon from './Icon.svelte';
 
@@ -10,12 +19,29 @@
     onadd,
   }: { entries: Entry[]; onopen: (e: Entry) => void; onadd: () => void } = $props();
 
-  const groups = $derived(agenda(entries, calendar.today));
+  // Everything coming up. Repeats show for the next two weeks, or just the
+  // next one when that's further out (a birthday in May shows in January).
+  const groups = $derived.by(() => {
+    const today = calendar.today;
+    const once = entries.filter((e) => !e.repeat);
+    const repeating = entries.filter((e) => e.repeat);
+    const soon = occurrences(repeating, today, addDays(today, 13));
+    const seen = new Set(soon.map((e) => e.id));
+    const later: Entry[] = [];
+    for (const e of occurrences(
+      repeating.filter((e) => !seen.has(e.id)),
+      addDays(today, 14),
+      addDays(today, 400),
+    )) {
+      if (!seen.has(e.id)) (seen.add(e.id), later.push(e));
+    }
+    return agenda([...once, ...soon, ...later], today);
+  });
 
   // Pet sitting coming up in the next two weeks that nobody has booked yet.
   const unbooked = $derived(
     calendar.entries
-      .filter((e) => e.kind === 'petsit' && e.sitter_status !== 'booked')
+      .filter((e) => e.kind === 'petsit' && !e.repeat && e.sitter_status !== 'booked')
       .filter((e) => {
         const [first, last] = span(e);
         return last >= calendar.today && first <= addDays(calendar.today, 14);
@@ -68,7 +94,7 @@
           {dayLabel(group.day, calendar.today)}
         </h3>
         <div class="flex flex-col">
-          {#each group.entries as entry (entry.id)}
+          {#each group.entries as entry (entry.key ?? entry.id)}
             <EntryRow {entry} {onopen} />
           {/each}
         </div>

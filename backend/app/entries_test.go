@@ -165,3 +165,40 @@ func TestMorningDigest(t *testing.T) {
 		t.Error("a quiet day still sent a digest")
 	}
 }
+
+func TestMorningDigestRepeats(t *testing.T) {
+	a := newApp(t)
+	addEntry(t, a, map[string]any{
+		"title": "Piano", "kind": "event", "repeat": "weekly",
+		"start": time.Date(2026, 1, 7, 17, 0, 0, 0, time.Local), // a Wednesday
+	})
+	addEntry(t, a, map[string]any{
+		"title": "Rent", "kind": "event", "all_day": true, "repeat": "monthly",
+		"start": "2026-01-31 00:00:00.000Z", // skips months without a 31st
+	})
+	addEntry(t, a, map[string]any{
+		"title": "Gym", "kind": "event", "all_day": true, "repeat": "daily",
+		"start": "2026-01-01 00:00:00.000Z", "repeat_until": "2026-01-31 00:00:00.000Z",
+	})
+
+	for _, c := range []struct {
+		day  time.Time
+		want string
+	}{
+		{time.Date(2026, 12, 2, 7, 30, 0, 0, time.Local), "Today: Piano"},
+		{time.Date(2026, 12, 30, 7, 30, 0, 0, time.Local), "Today: Piano"},
+		{time.Date(2026, 12, 31, 7, 30, 0, 0, time.Local), "Today: Rent"},
+		{time.Date(2026, 1, 20, 7, 30, 0, 0, time.Local), "Today: Gym"},
+	} {
+		msg, _, err := app.MorningDigest(a, c.day)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if msg.Body != c.want {
+			t.Errorf("%s: body = %q, want %q", c.day.Format(time.DateOnly), msg.Body, c.want)
+		}
+	}
+	if _, ok, _ := app.MorningDigest(a, time.Date(2026, 11, 30, 7, 30, 0, 0, time.Local)); ok {
+		t.Error("30 November has no rent, piano or gym")
+	}
+}

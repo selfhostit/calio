@@ -92,7 +92,7 @@ func morningDigest(app core.App, now time.Time) (push.Message, bool, error) {
 	from := now.Add(-400 * 24 * time.Hour).UTC().Format(types.DefaultDateLayout)
 	to := now.Add(sitterWarning + 48*time.Hour).UTC().Format(types.DefaultDateLayout)
 	entries, err := app.FindRecordsByFilter("entries",
-		"start <= {:to} && (end >= {:from} || start >= {:from})", "start", 0, 0,
+		"start <= {:to} && (end >= {:from} || start >= {:from} || repeat != '')", "start", 0, 0,
 		map[string]any{"from": from, "to": to})
 	if err != nil {
 		return push.Message{}, false, err
@@ -100,11 +100,12 @@ func morningDigest(app core.App, now time.Time) (push.Message, bool, error) {
 
 	var on, sitters []string
 	for _, r := range entries {
-		first, last := days(r)
-		if first <= today && today <= last {
+		first, _ := days(r)
+		if occursOn(r, today) {
 			on = append(on, r.GetString("title"))
 		}
-		if r.GetString("kind") == "petsit" && r.GetString("sitter_status") != "booked" && first >= today {
+		if r.GetString("kind") == "petsit" && r.GetString("repeat") == "" &&
+			r.GetString("sitter_status") != "booked" && first >= today {
 			if start := r.GetDateTime("start").Time(); start.Sub(now) <= sitterWarning {
 				sitters = append(sitters, r.GetString("title")+" ("+when(r)+")")
 			}
@@ -140,6 +141,60 @@ func days(r *core.Record) (string, string) {
 		return start.UTC().Format(time.DateOnly), end.UTC().Format(time.DateOnly)
 	}
 	return start.In(time.Local).Format(time.DateOnly), end.In(time.Local).Format(time.DateOnly)
+}
+
+// occursOn reports whether an entry, or one of its repeats, is on a day
+// (YYYY-MM-DD in the server's time zone).
+func occursOn(r *core.Record, day string) bool {
+	first, last := days(r)
+	if first <= day && day <= last {
+		return true
+	}
+	rule := r.GetString("repeat")
+	if rule == "" || day < first {
+		return false
+	}
+	until := "9999-12-31"
+	if u := r.GetDateTime("repeat_until"); !u.IsZero() {
+		until = u.Time().UTC().Format(time.DateOnly)
+	}
+	start, _ := time.Parse(time.DateOnly, first)
+	end, _ := time.Parse(time.DateOnly, last)
+	length := end.Sub(start)
+	for n := 1; n < 100_000; n++ {
+		occ, ok := nthRepeat(start, rule, n)
+		if !ok {
+			continue
+		}
+		d := occ.Format(time.DateOnly)
+		if d > day || d > until {
+			return false
+		}
+		if day <= occ.Add(length).Format(time.DateOnly) {
+			return true
+		}
+	}
+	return false
+}
+
+// nthRepeat gives the day of the nth repeat after start. ok is false for a
+// month or year that doesn't have that day (the 31st, or 29 February), which
+// is skipped, as calendar apps do.
+func nthRepeat(start time.Time, rule string, n int) (time.Time, bool) {
+	var t time.Time
+	switch rule {
+	case "daily":
+		return start.AddDate(0, 0, n), true
+	case "weekly":
+		return start.AddDate(0, 0, 7*n), true
+	case "monthly":
+		t = start.AddDate(0, n, 0)
+	case "yearly":
+		t = start.AddDate(n, 0, 0)
+	default:
+		return t, false
+	}
+	return t, t.Day() == start.Day()
 }
 
 // when describes an entry's dates for a notification, like "Fri 12 Dec" or

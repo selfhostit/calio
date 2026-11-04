@@ -12,11 +12,16 @@
     type Entry,
     type Kind,
     type SitterStatus,
+    type ChecklistItem,
+    type Repeat,
+    REPEATS,
+    mapLink,
   } from '../lib/entries';
   import { LOOK } from '../lib/look';
   import { errorMessage } from '../lib/pb';
   import { session } from '../lib/session.svelte';
   import Avatar from './Avatar.svelte';
+  import Checklist from './Checklist.svelte';
   import Icon from './Icon.svelte';
   import Sheet from './Sheet.svelte';
 
@@ -45,6 +50,43 @@
   let sitter = $state(editing?.sitter ?? '');
   let sitterStatus = $state<SitterStatus>((editing?.sitter_status as SitterStatus) || 'needed');
   let needSitter = $state(false);
+  let repeat = $state<Repeat | ''>(editing?.repeat ?? '');
+  let repeatUntil = $state(editing?.repeat_until ? editing.repeat_until.slice(0, 10) : '');
+  let checklist = $state<ChecklistItem[]>(editing?.checklist ?? []);
+  let showChecklist = $state(!!editing?.checklist?.length);
+
+  // Starting points for a packing list: the last trip's list, or a short one.
+  const lastTrip = calendar.entries
+    .filter((e) => e.kind === 'trip' && e.id !== editing?.id && e.checklist?.length)
+    .sort((a, b) => (a.start < b.start ? 1 : -1))[0];
+  const packingSuggestions = [
+    ...(lastTrip
+      ? [{ label: `Same as ${lastTrip.title}`, items: lastTrip.checklist!.map((i) => i.text) }]
+      : []),
+    {
+      label: 'Starter list',
+      items: [
+        'Passports and IDs',
+        'Tickets',
+        'Phone chargers',
+        'Medicine',
+        'Toiletries',
+        'Clothes',
+        'Keys',
+      ],
+    },
+  ];
+
+  // On an entry that already exists, ticking items saves at once, so the list
+  // works while you pack.
+  async function saveChecklist() {
+    if (!editing) return;
+    try {
+      await calendar.save(editing.id, { checklist });
+    } catch (err) {
+      error = errorMessage(err);
+    }
+  }
   let busy = $state(false);
   let error = $state('');
 
@@ -91,6 +133,9 @@
       people,
       sitter: kind === 'petsit' ? sitter.trim() : '',
       sitter_status: kind === 'petsit' ? sitterStatus : '',
+      repeat,
+      repeat_until: repeat && repeatUntil ? allDayValue(repeatUntil) : '',
+      checklist,
     };
     try {
       await calendar.save(editing?.id ?? null, data);
@@ -178,6 +223,23 @@
           <label>Ends <input type="datetime-local" bind:value={endAt} min={startAt} /></label>
         </div>
       {/if}
+      <div class="grid grid-cols-2 gap-2">
+        <label
+          >Repeats
+          <select bind:value={repeat}>
+            {#each REPEATS as r (r.repeat)}<option value={r.repeat}>{r.label}</option>{/each}
+          </select>
+        </label>
+        {#if repeat}
+          <label
+            >Until <input
+              type="date"
+              bind:value={repeatUntil}
+              min={allDay ? startDay : startAt.slice(0, 10)}
+            /></label
+          >
+        {/if}
+      </div>
     </div>
 
     {#if kind === 'petsit'}
@@ -206,10 +268,24 @@
         </div>
       </div>
     {:else}
-      <label>
-        {kind === 'trip' ? 'Staying at' : 'Where'}
-        <input bind:value={location} placeholder="Optional" maxlength="200" />
-      </label>
+      <div class="flex flex-col gap-1.5">
+        <label>
+          {kind === 'trip' ? 'Staying at' : 'Where'}
+          <input
+            bind:value={location}
+            placeholder="Address, place, “lat, lon” or a map link"
+            maxlength="200"
+          />
+        </label>
+        {#if location.trim()}
+          <a
+            class="inline-flex items-center gap-1 self-start text-sm font-medium text-brand-600 dark:text-brand-400"
+            href={mapLink(location)}
+            target="_blank"
+            rel="noopener noreferrer"><Icon name="pin" class="size-4" /> Open in Google Maps</a
+          >
+        {/if}
+      </div>
     {/if}
 
     {#if calendar.people.length > 1}
@@ -247,6 +323,22 @@
         </span>
         <Icon name="paw" class="size-5 text-amber-600 dark:text-amber-300" />
       </label>
+    {/if}
+
+    {#if kind === 'trip' || showChecklist}
+      <Checklist
+        bind:items={checklist}
+        label={kind === 'trip' ? 'Packing list' : 'Checklist'}
+        suggestions={kind === 'trip' ? packingSuggestions : []}
+        onchange={saveChecklist}
+      />
+    {:else}
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 self-start text-sm font-medium text-brand-600 dark:text-brand-400"
+        onclick={() => (showChecklist = true)}
+        ><Icon name="check" class="size-4" /> Add a checklist</button
+      >
     {/if}
 
     <label>
