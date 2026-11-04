@@ -10,6 +10,7 @@ running on your own hardware.**
 <img src="docs/images/upcoming.png" width="200" alt="The upcoming list, with a trip in progress and a pet sitter still needed">&nbsp;
 <img src="docs/images/month.png" width="200" alt="The month view, with trips and pet sitting as bars across the days">&nbsp;
 <img src="docs/images/add.png" width="200" alt="Adding pet sitting">&nbsp;
+<img src="docs/images/contacts.png" width="200" alt="Contacts: the vet, pet sitters and babysitters">&nbsp;
 <img src="docs/images/upcoming-dark.png" width="200" alt="The upcoming list in dark mode">
 
 </div>
@@ -32,6 +33,9 @@ own phone and sees the same calendar, live.
   (Settings > Calendar feed). Each person's link has its own secret and can be replaced.
   Google Calendar needs the feed reachable from the internet: set `CALIO_FEED_URL` to a
   public address that serves only `/api/app/feed/` (for example through Tailscale Funnel).
+- **Contacts**: the vet, pet sitters, babysitters, the doctor, with one-tap call, email and
+  map, and notes for things like feeding routines or the door code. A pet sitter's name in
+  pet sitting links to their number.
 - **Upcoming and month views**, filtered by kind, in light and dark mode.
 - **Notifications**: everyone else hears when something is added or a sitter is booked,
   and at 07:30 a morning summary lists what's on today and sitting that still needs someone.

@@ -1,3 +1,4 @@
+import type { Contact } from './contacts';
 import { dayOf, type Entry } from './entries';
 import { errorMessage, pb, type User } from './pb';
 
@@ -6,6 +7,7 @@ import { errorMessage, pb, type User } from './pb';
 class Calendar {
   entries = $state<Entry[]>([]);
   people = $state<User[]>([]);
+  contacts = $state<Contact[]>([]);
   loaded = $state(false);
   error = $state('');
   today = $state(dayOf(new Date()));
@@ -15,12 +17,14 @@ class Calendar {
   async start() {
     const entries = pb.collection<Entry>('entries');
     try {
-      const [list, people] = await Promise.all([
+      const [list, people, contacts] = await Promise.all([
         entries.getFullList({ sort: 'start', batch: 500 }),
         pb.collection<User>('users').getFullList({ sort: 'name' }),
+        pb.collection<Contact>('contacts').getFullList({ sort: 'name' }),
       ]);
       this.entries = list;
       this.people = people;
+      this.contacts = contacts;
       this.loaded = true;
     } catch (err) {
       this.error = errorMessage(err, "Couldn't load the calendar.");
@@ -31,12 +35,19 @@ class Calendar {
       const rest = this.entries.filter((e) => e.id !== record.id);
       this.entries = action === 'delete' ? rest : [...rest, record];
     });
+    const unsubscribeContacts = await pb
+      .collection<Contact>('contacts')
+      .subscribe('*', ({ action, record }) => {
+        const rest = this.contacts.filter((c) => c.id !== record.id);
+        this.contacts = action === 'delete' ? rest : [...rest, record];
+      });
     // the day changes at midnight, and when the phone wakes the app up
     const tick = () => (this.today = dayOf(new Date()));
     const timer = setInterval(tick, 60_000);
     document.addEventListener('visibilitychange', tick);
     this.#stop = () => {
       unsubscribe();
+      unsubscribeContacts();
       clearInterval(timer);
       document.removeEventListener('visibilitychange', tick);
     };
@@ -57,6 +68,18 @@ class Calendar {
     // show it right away; the realtime event that follows is the same record
     this.entries = [...this.entries.filter((e) => e.id !== saved.id), saved];
     return saved;
+  }
+
+  async saveContact(id: string | null, data: Partial<Contact>): Promise<Contact> {
+    const contacts = pb.collection<Contact>('contacts');
+    const saved = id ? await contacts.update(id, data) : await contacts.create(data);
+    this.contacts = [...this.contacts.filter((c) => c.id !== saved.id), saved];
+    return saved;
+  }
+
+  async removeContact(id: string) {
+    await pb.collection('contacts').delete(id);
+    this.contacts = this.contacts.filter((c) => c.id !== id);
   }
 
   async remove(id: string) {

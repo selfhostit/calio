@@ -5,6 +5,7 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- Contacts for the vet, pet sitters, babysitters and others, with notes.
 - A calendar feed (iCalendar) per person, for Apple Calendar, Outlook and Google Calendar.
 - Repeating entries, checklists (packing lists on trips) and Google Maps links for places.
 - Calio: a shared household calendar for events, pet sitting and trips, with upcoming and
