@@ -4,6 +4,7 @@
   import { pb } from '../lib/pb';
   import { session } from '../lib/session.svelte';
   import Avatar from './Avatar.svelte';
+  import Feed from './Feed.svelte';
   import Notifications from './Notifications.svelte';
   import Sheet from './Sheet.svelte';
 
@@ -43,6 +44,8 @@
     {/if}
 
     <Notifications />
+
+    <Feed />
 
     <section class="card flex flex-col gap-2 text-sm">
       <h3 class="font-semibold">Household</h3>
