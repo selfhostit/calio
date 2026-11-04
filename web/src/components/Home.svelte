@@ -15,12 +15,15 @@
   import { session } from '../lib/session.svelte';
   import Agenda from './Agenda.svelte';
   import Avatar from './Avatar.svelte';
+  import ContactSheet from './ContactSheet.svelte';
+  import Contacts from './Contacts.svelte';
+  import type { Contact } from '../lib/contacts';
   import EntrySheet from './EntrySheet.svelte';
   import Icon from './Icon.svelte';
   import MonthView from './MonthView.svelte';
   import Settings from './Settings.svelte';
 
-  type View = 'upcoming' | 'month';
+  type View = 'upcoming' | 'month' | 'contacts';
   const saved = (() => {
     try {
       return localStorage.getItem('calio.view') as View | null;
@@ -29,7 +32,8 @@
     }
   })();
 
-  let view = $state<View>(saved === 'month' ? 'month' : 'upcoming');
+  let view = $state<View>(saved === 'month' || saved === 'contacts' ? saved : 'upcoming');
+  let contactSheet = $state<{ contact: Contact | null } | null>(null);
   let filter = $state<Kind | 'all'>('all');
   let selected = $state<Day>(calendar.today);
   let sheet = $state<{ entry: Entry | null; day: Day } | null>(null);
@@ -64,6 +68,12 @@
       entry: calendar.entries.find((e) => e.id === entry.id) ?? entry,
       day: calendar.today,
     });
+  const TABS = [
+    { v: 'upcoming', label: 'Upcoming', icon: 'list' },
+    { v: 'month', label: 'Month', icon: 'grid' },
+    { v: 'contacts', label: 'Contacts', icon: 'phone' },
+  ];
+
   const add = (day: Day = view === 'month' ? selected : calendar.today) =>
     (sheet = { entry: null, day });
 
@@ -115,7 +125,7 @@
   <main class="flex flex-1 flex-col gap-4 px-4 pt-4 pb-28">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="inline-flex rounded-xl bg-zinc-200/70 p-1 dark:bg-zinc-800" role="tablist">
-        {#each [{ v: 'upcoming', label: 'Upcoming', icon: 'list' }, { v: 'month', label: 'Month', icon: 'grid' }] as t (t.v)}
+        {#each TABS as t (t.v)}
           <button
             role="tab"
             aria-selected={view === t.v}
@@ -128,7 +138,11 @@
           >
         {/each}
       </div>
-      <div class="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <div
+        class="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0 {view === 'contacts'
+          ? 'hidden'
+          : ''}"
+      >
         <button
           class="shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition {filter ===
           'all'
@@ -168,15 +182,20 @@
       </div>
     {:else if view === 'upcoming'}
       <Agenda {entries} onopen={open} onadd={() => add()} />
-    {:else}
+    {:else if view === 'month'}
       <MonthView {entries} bind:selected onopen={open} onadd={add} />
+    {:else}
+      <Contacts
+        onopen={(contact) => (contactSheet = { contact })}
+        onadd={() => (contactSheet = { contact: null })}
+      />
     {/if}
   </main>
 
   <button
     class="fixed right-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 grid size-14 place-items-center rounded-full bg-brand-600 text-white shadow-lg shadow-zinc-900/20 transition hover:bg-brand-700 active:scale-95 sm:right-[max(1.25rem,calc(50vw-24rem+1.25rem))]"
-    onclick={() => add()}
-    aria-label="Add to the calendar"
+    onclick={() => (view === 'contacts' ? (contactSheet = { contact: null }) : add())}
+    aria-label={view === 'contacts' ? 'Add a contact' : 'Add to the calendar'}
   >
     <Icon name="plus" class="size-6" />
   </button>
@@ -184,6 +203,9 @@
 
 {#if sheet}
   <EntrySheet entry={sheet.entry} day={sheet.day} onclose={() => (sheet = null)} />
+{/if}
+{#if contactSheet}
+  <ContactSheet contact={contactSheet.contact} onclose={() => (contactSheet = null)} />
 {/if}
 {#if settings}
   <Settings onclose={() => (settings = false)} />

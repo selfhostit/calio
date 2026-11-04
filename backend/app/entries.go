@@ -32,6 +32,14 @@ func registerEntries(app core.App) {
 		return e.Next()
 	})
 
+	// A new contact: remember who added it.
+	app.OnRecordCreateRequest("contacts").BindFunc(func(e *core.RecordRequestEvent) error {
+		if e.Auth != nil && e.Auth.Collection().Name == "users" {
+			e.Record.Set("created_by", e.Auth.Id)
+		}
+		return e.Next()
+	})
+
 	// A new entry: remember who added it and tell everyone else.
 	app.OnRecordCreateRequest("entries").BindFunc(func(e *core.RecordRequestEvent) error {
 		byID, byName := "", "Someone"

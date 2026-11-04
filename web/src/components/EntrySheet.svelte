@@ -22,6 +22,7 @@
   import { session } from '../lib/session.svelte';
   import Avatar from './Avatar.svelte';
   import Checklist from './Checklist.svelte';
+  import { findByName, telLink } from '../lib/contacts';
   import Icon from './Icon.svelte';
   import Sheet from './Sheet.svelte';
 
@@ -50,6 +51,7 @@
   let sitter = $state(editing?.sitter ?? '');
   let sitterStatus = $state<SitterStatus>((editing?.sitter_status as SitterStatus) || 'needed');
   let needSitter = $state(false);
+  const sitterContact = $derived(findByName(calendar.contacts, sitter));
   let repeat = $state<Repeat | ''>(editing?.repeat ?? '');
   let repeatUntil = $state(editing?.repeat_until ? editing.repeat_until.slice(0, 10) : '');
   let checklist = $state<ChecklistItem[]>(editing?.checklist ?? []);
@@ -245,8 +247,25 @@
     {#if kind === 'petsit'}
       <label>
         Sitter
-        <input bind:value={sitter} placeholder="Name, or leave empty for now" maxlength="120" />
+        <input
+          bind:value={sitter}
+          placeholder="Name, or leave empty for now"
+          maxlength="120"
+          list="sitters"
+        />
+        <datalist id="sitters">
+          {#each calendar.contacts.filter((c) => c.role === 'petsitter') as c (c.id)}
+            <option value={c.name}></option>
+          {/each}
+        </datalist>
       </label>
+      {#if sitterContact?.phone}
+        <a
+          class="-mt-2 inline-flex items-center gap-1 self-start text-sm font-medium text-brand-600 dark:text-brand-400"
+          href={telLink(sitterContact.phone)}
+          ><Icon name="phone" class="size-4" /> Call {sitterContact.name} · {sitterContact.phone}</a
+        >
+      {/if}
       <div class="flex flex-col gap-1.5">
         <span class="text-sm font-medium">Status</span>
         <div
