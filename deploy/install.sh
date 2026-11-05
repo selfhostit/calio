@@ -31,6 +31,14 @@ setenv() {
 	' .env >.env.tmp && mv .env.tmp .env
 }
 
+# port_in_use PORT: true if a container or a program on this machine already has PORT
+port_in_use() {
+	{
+		docker ps --format '{{.Ports}}' 2>/dev/null
+		ss -ltn 2>/dev/null || netstat -ltn 2>/dev/null
+	} | grep -Eq "[:.]$1([^0-9]|\$)"
+}
+
 fetch() {
 	if command -v curl >/dev/null; then curl -fsSL "$1"; else wget -qO- "$1"; fi
 }
@@ -63,6 +71,10 @@ if [ ! -f .env ]; then
 		setenv PGID "${SUDO_GID:-$(id -g)}"
 	fi
 	setenv TS_HOSTNAME "$(basename "$dir")"
+	# Other apps on the machine often use 8090 too; take the first free port after it.
+	port=8090
+	while port_in_use "$port" && [ "$port" -lt 8190 ]; do port=$((port + 1)); done
+	setenv PORT "$port"
 
 	# Asks only when TS_AUTHKEY is not set; set but empty means no Tailscale.
 	key=${TS_AUTHKEY:-}
