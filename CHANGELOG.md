@@ -5,6 +5,13 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- golang.org/x/net 0.62.0, which fixes GO-2026-6860.
+- SECURITY.md: how to report a problem privately, and how quickly fixes ship.
+- Security scans on every pull request and every Monday: CodeQL, govulncheck, Grype
+  (web and worker dependencies, released images), dependency review and gitleaks.
+- The containers' filesystems are read-only apart from `pb_data` and `/tmp`.
+- The compose file follows the major version (`:0`) instead of `:latest`, and the
+  installer fetches the compose files of the newest release instead of `main`.
 - Categories: choose which ones the household uses (Event, Pet sitting, Trip,
   Babysitting) and add your own with a color and an icon, in Settings.
 - Comments on entries, which notify everyone else.
