@@ -2,16 +2,18 @@
   import type { ChecklistItem } from '../lib/entries';
   import Icon from './Icon.svelte';
 
-  // A list of things to do or pack. onchange runs after every tick, add and
+  // A list of things to do, pack or buy. onchange runs after every tick, add and
   // removal, so an entry that already exists can save each change right away.
   let {
     items = $bindable(),
     label,
     suggestions = [],
+    placeholder = 'Add an item',
     onchange,
   }: {
     items: ChecklistItem[];
     label: string;
+    placeholder?: string;
     suggestions?: { label: string; items: string[] }[];
     onchange?: () => void;
   } = $props();
@@ -86,7 +88,7 @@
   <div class="flex gap-2">
     <input
       bind:value={text}
-      placeholder="Add an item"
+      {placeholder}
       maxlength="200"
       onkeydown={(e) => {
         if (e.key === 'Enter') {

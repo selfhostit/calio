@@ -2,7 +2,10 @@
   "TCP": { "443": { "HTTPS": true } },
   "Web": {
     "${TS_CERT_DOMAIN}:443": {
-      "Handlers": { "/api/app/feed/": { "Proxy": "http://app:8090/api/app/feed" } }
+      "Handlers": {
+        "/api/app/feed/": { "Proxy": "http://app:8090/api/app/feed" },
+        "/api/app/share/": { "Proxy": "http://app:8090/api/app/share" }
+      }
     }
   },
   "AllowFunnel": { "${TS_CERT_DOMAIN}:443": true }

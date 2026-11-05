@@ -1,8 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { calendar, firstName } from '../lib/calendar.svelte';
+  import { offered } from '../lib/categories';
   import {
-    KINDS,
     SITTER_STATUS,
     allDayValue,
     instantValue,
@@ -17,12 +17,12 @@
     REPEATS,
     mapLink,
   } from '../lib/entries';
-  import { LOOK } from '../lib/look';
   import { errorMessage } from '../lib/pb';
+  import { sendToShoppa, shoppaEnabled } from '../lib/shoppa';
   import { session } from '../lib/session.svelte';
   import Avatar from './Avatar.svelte';
   import Checklist from './Checklist.svelte';
-  import { findByName, telLink } from '../lib/contacts';
+  import Comments from './Comments.svelte';
   import Icon from './Icon.svelte';
   import Sheet from './Sheet.svelte';
 
@@ -36,9 +36,14 @@
   const { editing, first } = untrack(() => ({ editing: entry, first: day }));
   const initial = editing ? span(editing) : [first, first];
 
-  let kind = $state<Kind>(editing?.kind ?? 'event');
+  // the categories switched on, and this entry's own
+  const choices = $derived(offered(calendar.categories, editing?.category));
+  let category = $state(editing?.category ?? untrack(() => choices[0]?.id ?? ''));
+  const chosen = $derived(calendar.categories.find((c) => c.id === category));
+  const kind = $derived<Kind>(chosen?.kind ?? editing?.kind ?? 'event');
+  const look = $derived(calendar.look({ kind, category }));
   let title = $state(editing?.title ?? '');
-  let allDay = $state(editing ? editing.all_day : false);
+  let allDay = $state(editing ? editing.all_day : untrack(() => kind !== 'event'));
   let startDay = $state(initial[0]);
   let endDay = $state(initial[1]);
   let startAt = $state(
@@ -51,11 +56,26 @@
   let sitter = $state(editing?.sitter ?? '');
   let sitterStatus = $state<SitterStatus>((editing?.sitter_status as SitterStatus) || 'needed');
   let needSitter = $state(false);
-  const sitterContact = $derived(findByName(calendar.contacts, sitter));
+  // the sitters the household has had before, to pick from
+  const sitters = [
+    ...new Set(calendar.entries.map((e) => e.sitter?.trim()).filter((s): s is string => !!s)),
+  ].sort();
+  // where "the pets need a sitter" goes
+  const petsCategory = $derived(
+    choices.find((c) => c.kind === 'petsit' && c.icon === 'paw') ??
+      choices.find((c) => c.kind === 'petsit'),
+  );
   let repeat = $state<Repeat | ''>(editing?.repeat ?? '');
   let repeatUntil = $state(editing?.repeat_until ? editing.repeat_until.slice(0, 10) : '');
   let checklist = $state<ChecklistItem[]>(editing?.checklist ?? []);
   let showChecklist = $state(!!editing?.checklist?.length);
+  let shopping = $state<ChecklistItem[]>(editing?.shopping ?? []);
+  let showShopping = $state(!!editing?.shopping?.length);
+  let shoppa = $state(false);
+  let shoppaBusy = $state(false);
+  let shoppaMessage = $state('');
+  shoppaEnabled().then((on) => (shoppa = on));
+  const toBuy = $derived(shopping.filter((i) => !i.done).length);
 
   // Starting points for a packing list: the last trip's list, or a short one.
   const lastTrip = calendar.entries
@@ -79,14 +99,28 @@
     },
   ];
 
-  // On an entry that already exists, ticking items saves at once, so the list
-  // works while you pack.
-  async function saveChecklist() {
+  // On an entry that already exists, ticking items saves at once, so the
+  // lists work while you pack or shop.
+  async function saveLists() {
     if (!editing) return;
     try {
-      await calendar.save(editing.id, { checklist });
+      await calendar.save(editing.id, { checklist, shopping });
     } catch (err) {
       error = errorMessage(err);
+    }
+  }
+
+  async function toShoppa() {
+    if (!editing) return;
+    shoppaBusy = true;
+    shoppaMessage = '';
+    try {
+      const r = await sendToShoppa(editing.id);
+      shoppaMessage = `Sent ${r.sent} ${r.sent === 1 ? 'item' : 'items'} to ${r.list} in Shoppa.`;
+    } catch (err) {
+      shoppaMessage = errorMessage(err);
+    } finally {
+      shoppaBusy = false;
     }
   }
   let busy = $state(false);
@@ -96,16 +130,22 @@
     !!editing && (editing.created_by === session.user?.id || session.isOwner),
   );
 
-  const PLACEHOLDER: Record<Kind, string> = {
-    event: 'Dinner at Maria’s',
-    petsit: 'Who needs looking after? Luna and Milo',
-    trip: 'Where to? Crete',
-  };
+  const placeholder = $derived(
+    kind === 'trip'
+      ? 'Where to? Crete'
+      : kind === 'event'
+        ? 'Dinner at Maria’s'
+        : look.icon === 'baby'
+          ? 'Eva and Leo'
+          : look.icon === 'home'
+            ? 'The house and the plants'
+            : 'Luna and Milo',
+  );
 
-  function pick(k: Kind) {
-    kind = k;
-    // trips and pet sitting are usually whole days
-    if (!editing) allDay = k !== 'event';
+  function pick(id: string) {
+    category = id;
+    // trips and sitting are usually whole days
+    if (!editing) allDay = kind !== 'event';
   }
 
   function togglePerson(id: string) {
@@ -122,6 +162,7 @@
     error = '';
     const data: Partial<Entry> = {
       title: title.trim(),
+      category,
       kind,
       all_day: allDay,
       start: allDay ? allDayValue(startDay) : instantValue(startAt),
@@ -138,12 +179,14 @@
       repeat,
       repeat_until: repeat && repeatUntil ? allDayValue(repeatUntil) : '',
       checklist,
+      shopping,
     };
     try {
       await calendar.save(editing?.id ?? null, data);
       if (!editing && kind === 'trip' && needSitter) {
         await calendar.save(null, {
           title: `Pets while we're in ${data.title}`,
+          category: petsCategory?.id ?? '',
           kind: 'petsit',
           all_day: data.all_day,
           start: data.start,
@@ -177,34 +220,39 @@
 
 <Sheet title={editing ? 'Edit' : 'Add to the calendar'} {onclose}>
   <form class="flex flex-col gap-4 pt-1" onsubmit={save}>
-    <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Kind">
-      {#each KINDS as k (k.kind)}
-        <button
-          type="button"
-          role="radio"
-          aria-checked={kind === k.kind}
-          class="flex flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 text-sm font-semibold transition {kind ===
-          k.kind
-            ? LOOK[k.kind].chip
-            : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300'}"
-          onclick={() => pick(k.kind)}
-        >
-          <Icon name={LOOK[k.kind].icon} class="size-6" />
-          {k.label}
-        </button>
-      {/each}
-    </div>
+    {#if choices.length > 1}
+      <div
+        class="grid gap-2 {choices.length === 2
+          ? 'grid-cols-2'
+          : choices.length === 4
+            ? 'grid-cols-2 sm:grid-cols-4'
+            : 'grid-cols-3'}"
+        role="radiogroup"
+        aria-label="Category"
+      >
+        {#each choices as c (c.id)}
+          {@const l = calendar.look({ kind: c.kind, category: c.id })}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={category === c.id}
+            class="flex flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 text-sm font-semibold transition {category ===
+            c.id
+              ? l.chip
+              : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300'}"
+            onclick={() => pick(c.id)}
+          >
+            <Icon name={l.icon} class="size-6" />
+            <span class="max-w-full truncate">{c.name}</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
 
     <label>
       {kind === 'trip' ? 'Destination' : kind === 'petsit' ? 'Who needs looking after' : 'What'}
       <!-- svelte-ignore a11y_autofocus -->
-      <input
-        bind:value={title}
-        placeholder={PLACEHOLDER[kind]}
-        required
-        maxlength="200"
-        autofocus={!editing}
-      />
+      <input bind:value={title} {placeholder} required maxlength="200" autofocus={!editing} />
     </label>
 
     <div class="flex flex-col gap-3 rounded-2xl bg-zinc-50 p-3 dark:bg-zinc-800/50">
@@ -254,18 +302,11 @@
           list="sitters"
         />
         <datalist id="sitters">
-          {#each calendar.contacts.filter((c) => c.role === 'petsitter') as c (c.id)}
-            <option value={c.name}></option>
+          {#each sitters as name (name)}
+            <option value={name}></option>
           {/each}
         </datalist>
       </label>
-      {#if sitterContact?.phone}
-        <a
-          class="-mt-2 inline-flex items-center gap-1 self-start text-sm font-medium text-brand-600 dark:text-brand-400"
-          href={telLink(sitterContact.phone)}
-          ><Icon name="phone" class="size-4" /> Call {sitterContact.name} · {sitterContact.phone}</a
-        >
-      {/if}
       <div class="flex flex-col gap-1.5">
         <span class="text-sm font-medium">Status</span>
         <div
@@ -329,7 +370,7 @@
       </div>
     {/if}
 
-    {#if kind === 'trip' && !editing}
+    {#if kind === 'trip' && !editing && petsCategory}
       <label
         class="flex-row items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50"
       >
@@ -349,15 +390,54 @@
         bind:items={checklist}
         label={kind === 'trip' ? 'Packing list' : 'Checklist'}
         suggestions={kind === 'trip' ? packingSuggestions : []}
-        onchange={saveChecklist}
+        onchange={saveLists}
       />
-    {:else}
-      <button
-        type="button"
-        class="inline-flex items-center gap-1.5 self-start text-sm font-medium text-brand-600 dark:text-brand-400"
-        onclick={() => (showChecklist = true)}
-        ><Icon name="check" class="size-4" /> Add a checklist</button
-      >
+    {/if}
+
+    {#if showShopping}
+      <div class="flex flex-col gap-2">
+        <Checklist
+          bind:items={shopping}
+          label="Shopping list"
+          placeholder="Add something to buy"
+          onchange={saveLists}
+        />
+        {#if shoppa && editing && toBuy}
+          <button
+            type="button"
+            class="btn-secondary gap-1.5 self-start px-3 py-2 text-sm"
+            onclick={toShoppa}
+            disabled={shoppaBusy}
+            ><Icon name="send" class="size-4" />{shoppaBusy
+              ? 'Sending…'
+              : `Send ${toBuy} to Shoppa`}</button
+          >
+        {:else if shoppa && !editing && shopping.length}
+          <p class="text-xs text-zinc-500">Once it's added, you can send this list to Shoppa.</p>
+        {/if}
+        {#if shoppaMessage}<p class="text-sm text-zinc-500" role="status">{shoppaMessage}</p>{/if}
+      </div>
+    {/if}
+
+    {#if !(kind === 'trip' || showChecklist) || !showShopping}
+      <div class="flex flex-wrap gap-x-4 gap-y-2">
+        {#if !(kind === 'trip' || showChecklist)}
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 dark:text-brand-400"
+            onclick={() => (showChecklist = true)}
+            ><Icon name="check" class="size-4" /> Add a checklist</button
+          >
+        {/if}
+        {#if !showShopping}
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 dark:text-brand-400"
+            onclick={() => (showShopping = true)}
+            ><Icon name="cart" class="size-4" /> Add a shopping list</button
+          >
+        {/if}
+      </div>
     {/if}
 
     <label>
@@ -382,4 +462,8 @@
       >
     </div>
   </form>
+
+  {#if editing}
+    <Comments entry={editing} />
+  {/if}
 </Sheet>

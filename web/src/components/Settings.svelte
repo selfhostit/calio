@@ -4,6 +4,7 @@
   import { pb } from '../lib/pb';
   import { session } from '../lib/session.svelte';
   import Avatar from './Avatar.svelte';
+  import Categories from './Categories.svelte';
   import Feed from './Feed.svelte';
   import Notifications from './Notifications.svelte';
   import Sheet from './Sheet.svelte';
@@ -42,6 +43,8 @@
         <p>To install Calio, tap <b>Share</b> in Safari, then <b>Add to Home Screen</b>.</p>
       </section>
     {/if}
+
+    <Categories />
 
     <Notifications />
 

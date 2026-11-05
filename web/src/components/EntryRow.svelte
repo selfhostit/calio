@@ -1,24 +1,24 @@
 <script lang="ts">
   import { calendar } from '../lib/calendar.svelte';
   import {
-    KINDS,
     REPEATS,
     checklistLabel,
+    listLabel,
     mapLink,
     placeLabel,
     progressLabel,
     whenLabel,
     type Entry,
   } from '../lib/entries';
-  import { LOOK } from '../lib/look';
   import Avatar from './Avatar.svelte';
   import Icon from './Icon.svelte';
 
   let { entry, onopen }: { entry: Entry; onopen: (e: Entry) => void } = $props();
 
-  const look = $derived(LOOK[entry.kind]);
+  const look = $derived(calendar.look(entry));
   const progress = $derived(progressLabel(entry, calendar.today));
   const packed = $derived(checklistLabel(entry));
+  const toBuy = $derived(listLabel(entry.shopping));
   const status = $derived(
     entry.kind === 'petsit'
       ? entry.sitter_status === 'booked'
@@ -56,7 +56,7 @@
       <span class="truncate font-semibold">{entry.title}</span>
       {#if entry.repeat}<Icon name="repeat" class="size-3.5 shrink-0 text-zinc-400" />{/if}
       <span class="sr-only"
-        >({KINDS.find((k) => k.kind === entry.kind)?.label}{entry.repeat
+        >({look.name}{entry.repeat
           ? ', ' + REPEATS.find((r) => r.repeat === entry.repeat)?.label.toLowerCase()
           : ''})</span
       >
@@ -77,7 +77,7 @@
         >
       {/if}
     </span>
-    {#if status || progress || packed}
+    {#if status || progress || packed || toBuy}
       <span class="mt-1 flex flex-wrap gap-1.5 text-xs font-medium">
         {#if progress}<span
             class="rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
@@ -87,6 +87,10 @@
         {#if packed}<span
             class="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
             ><Icon name="check" class="size-3" />{packed}</span
+          >{/if}
+        {#if toBuy}<span
+            class="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+            ><Icon name="cart" class="size-3" />{toBuy}<span class="sr-only"> bought</span></span
           >{/if}
       </span>
     {/if}

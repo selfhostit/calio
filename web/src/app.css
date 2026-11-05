@@ -44,6 +44,13 @@
   .btn-secondary {
     @apply btn border border-zinc-300 bg-white hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800;
   }
+  /* a checkbox drawn as an on/off switch */
+  .switch {
+    @apply relative h-6 w-10 shrink-0 cursor-pointer appearance-none rounded-full bg-zinc-300 transition dark:bg-zinc-700;
+    @apply before:absolute before:top-0.5 before:left-0.5 before:size-5 before:rounded-full before:bg-white before:shadow before:transition;
+    @apply checked:bg-brand-600 checked:before:translate-x-4;
+    @apply focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:outline-none;
+  }
   .card {
     @apply rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900;
   }

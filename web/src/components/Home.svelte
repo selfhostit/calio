@@ -1,29 +1,27 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { calendar } from '../lib/calendar.svelte';
+  import { offered } from '../lib/categories';
+  import type { Doc } from '../lib/documents';
   import {
-    KINDS,
     longDayLabel,
     isOn,
     occurrences,
     progressLabel,
     type Day,
     type Entry,
-    type Kind,
   } from '../lib/entries';
-  import { LOOK } from '../lib/look';
   import { session } from '../lib/session.svelte';
   import Agenda from './Agenda.svelte';
   import Avatar from './Avatar.svelte';
-  import ContactSheet from './ContactSheet.svelte';
-  import Contacts from './Contacts.svelte';
-  import type { Contact } from '../lib/contacts';
+  import DocumentSheet from './DocumentSheet.svelte';
+  import Documents from './Documents.svelte';
   import EntrySheet from './EntrySheet.svelte';
   import Icon from './Icon.svelte';
   import MonthView from './MonthView.svelte';
   import Settings from './Settings.svelte';
 
-  type View = 'upcoming' | 'month' | 'contacts';
+  type View = 'upcoming' | 'month' | 'documents';
   const saved = (() => {
     try {
       return localStorage.getItem('calio.view') as View | null;
@@ -32,15 +30,17 @@
     }
   })();
 
-  let view = $state<View>(saved === 'month' || saved === 'contacts' ? saved : 'upcoming');
-  let contactSheet = $state<{ contact: Contact | null } | null>(null);
-  let filter = $state<Kind | 'all'>('all');
+  let view = $state<View>(saved === 'month' || saved === 'documents' ? saved : 'upcoming');
+  let docSheet = $state<{ doc: Doc | null } | null>(null);
+  // 'all', or a category's id
+  let filter = $state('all');
+  const chips = $derived(offered(calendar.categories));
   let selected = $state<Day>(calendar.today);
   let sheet = $state<{ entry: Entry | null; day: Day } | null>(null);
   let settings = $state(false);
 
   const entries = $derived(
-    filter === 'all' ? calendar.entries : calendar.entries.filter((e) => e.kind === filter),
+    filter === 'all' ? calendar.entries : calendar.entries.filter((e) => e.category === filter),
   );
   const today = $derived(
     occurrences(calendar.entries, calendar.today, calendar.today).filter((e) =>
@@ -48,6 +48,11 @@
     ),
   );
   const away = $derived(today.find((e) => e.kind === 'trip'));
+
+  // a filter for a category that was switched off or deleted goes away
+  $effect(() => {
+    if (filter !== 'all' && !chips.some((c) => c.id === filter)) filter = 'all';
+  });
 
   $effect(() => {
     try {
@@ -71,7 +76,7 @@
   const TABS = [
     { v: 'upcoming', label: 'Upcoming', icon: 'list' },
     { v: 'month', label: 'Month', icon: 'grid' },
-    { v: 'contacts', label: 'Contacts', icon: 'phone' },
+    { v: 'documents', label: 'Docs', icon: 'doc' },
   ];
 
   const add = (day: Day = view === 'month' ? selected : calendar.today) =>
@@ -108,12 +113,13 @@
     {#if today.length}
       <div class="mt-3 flex flex-wrap gap-1.5">
         {#each today.slice(0, 4) as e (e.key ?? e.id)}
+          {@const look = calendar.look(e)}
           <button
             class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-zinc-200 bg-white py-1 pr-3 pl-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             onclick={() => open(e)}
           >
-            <span class="grid size-5 place-items-center rounded-full {LOOK[e.kind].tile}"
-              ><Icon name={LOOK[e.kind].icon} class="size-3.5" /></span
+            <span class="grid size-5 place-items-center rounded-full {look.tile}"
+              ><Icon name={look.icon} class="size-3.5" /></span
             >
             <span class="truncate">{e.title}</span>
           </button>
@@ -139,7 +145,8 @@
         {/each}
       </div>
       <div
-        class="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0 {view === 'contacts'
+        class="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0 {view === 'documents' ||
+        chips.length < 2
           ? 'hidden'
           : ''}"
       >
@@ -150,16 +157,17 @@
             : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'}"
           onclick={() => (filter = 'all')}>All</button
         >
-        {#each KINDS as k (k.kind)}
+        {#each chips as c (c.id)}
+          {@const look = calendar.look({ kind: c.kind, category: c.id })}
           <button
             class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition {filter ===
-            k.kind
-              ? LOOK[k.kind].chip
+            c.id
+              ? look.chip
               : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'}"
-            onclick={() => (filter = filter === k.kind ? 'all' : k.kind)}
+            onclick={() => (filter = filter === c.id ? 'all' : c.id)}
           >
-            <span class="size-2 rounded-full {LOOK[k.kind].dot}"></span>
-            {k.plural}
+            <span class="size-2 rounded-full {look.dot}"></span>
+            {c.name}
           </button>
         {/each}
       </div>
@@ -185,17 +193,14 @@
     {:else if view === 'month'}
       <MonthView {entries} bind:selected onopen={open} onadd={add} />
     {:else}
-      <Contacts
-        onopen={(contact) => (contactSheet = { contact })}
-        onadd={() => (contactSheet = { contact: null })}
-      />
+      <Documents onopen={(doc) => (docSheet = { doc })} onadd={() => (docSheet = { doc: null })} />
     {/if}
   </main>
 
   <button
     class="fixed right-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 grid size-14 place-items-center rounded-full bg-brand-600 text-white shadow-lg shadow-zinc-900/20 transition hover:bg-brand-700 active:scale-95 sm:right-[max(1.25rem,calc(50vw-24rem+1.25rem))]"
-    onclick={() => (view === 'contacts' ? (contactSheet = { contact: null }) : add())}
-    aria-label={view === 'contacts' ? 'Add a contact' : 'Add to the calendar'}
+    onclick={() => (view === 'documents' ? (docSheet = { doc: null }) : add())}
+    aria-label={view === 'documents' ? 'Add a document' : 'Add to the calendar'}
   >
     <Icon name="plus" class="size-6" />
   </button>
@@ -204,8 +209,8 @@
 {#if sheet}
   <EntrySheet entry={sheet.entry} day={sheet.day} onclose={() => (sheet = null)} />
 {/if}
-{#if contactSheet}
-  <ContactSheet contact={contactSheet.contact} onclose={() => (contactSheet = null)} />
+{#if docSheet}
+  <DocumentSheet doc={docSheet.doc} onclose={() => (docSheet = null)} />
 {/if}
 {#if settings}
   <Settings onclose={() => (settings = false)} />

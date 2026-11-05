@@ -64,20 +64,23 @@ the app, and the port on the machine is bound to `127.0.0.1`. To let someone els
 in the household use it, [share the machine](https://tailscale.com/kb/1084/sharing)
 or invite them to the tailnet.
 
-### Calendar feed
+### Calendar feed and shared documents
 
 The app has a calendar feed (an `.ics` link the app shows you) that calendar apps
 subscribe to. Apple Calendar, Outlook, Thunderbird and DAVx⁵ fetch it from your
 own device, so they work over Tailscale with the normal address.
 
 Google Calendar is different: Google's servers fetch the feed, and they are not on
-your tailnet. For that, Calio can publish **only the feed** to the internet with
+your tailnet. The same goes for a document you share with a sitter (a page about the
+dog or the house): their phone isn't on your tailnet either. For both, Calio can
+publish **only the feed and shared documents** to the internet with
 [Tailscale Funnel](https://tailscale.com/kb/1223/funnel). It runs a second, small
 Tailscale node, `https://calio-feed.<your-tailnet>.ts.net`, whose only route is
-`/api/app/feed/`; every other path there answers 404, so sign-in, the app and the
-admin UI stay tailnet-only. The feed link has a long random token in it, which is
-the only thing that protects it, so treat the link like a password and reset it
-in the app if it leaks. Skip this if you don't use Google Calendar.
+`/api/app/feed/` and `/api/app/share/`; every other path there answers 404, so
+sign-in, the app and the admin UI stay tailnet-only. Feed and document links have a
+long random token in them, which is the only thing that protects them, so treat them
+like passwords: reset the feed link, or stop sharing the document, if one leaks.
+Skip this if you use neither Google Calendar nor shared documents.
 
 1. In the [access controls](https://login.tailscale.com/admin/acls/file), allow
    Funnel. The admin console offers to add it the first time; by hand, add this to
@@ -93,7 +96,7 @@ in the app if it leaks. Skip this if you don't use Google Calendar.
    ```
 3. Run `docker compose up -d`. The feed node's address is the app's address with
    `calio-feed` in place of `calio` (it is also listed under Machines in the admin
-   console). Set it so the app shows the public link:
+   console). Set it so the app shows public links:
    ```sh
    CALIO_FEED_URL=https://calio-feed.<your-tailnet>.ts.net
    ```
@@ -107,6 +110,29 @@ Tailscale off): the feed link downloads a calendar, and
 name can take up to ten minutes. To turn it off, remove `:docker-compose.funnel.yml`
 from `COMPOSE_FILE`, run `docker compose up -d --remove-orphans`, and remove the
 `calio-feed` machine in the admin console.
+
+### Shoppa
+
+[Shoppa](https://github.com/selfhostit/shoppa), the household shopping list, can take
+the shopping lists on Calio entries ("Send to Shoppa"). On a machine that runs both
+with Docker Compose:
+
+1. In Shoppa's admin UI (`/_/`), open the **workers** collection and add one, named
+   `calio`, with a password.
+2. In Calio's `.env`, append `:docker-compose.shoppa.yml` to `COMPOSE_FILE` and set:
+   ```sh
+   SHOPPA_WORKER=calio
+   SHOPPA_PASSWORD=...
+   SHOPPA_LIST=Groceries   # optional; the first list otherwise
+   ```
+3. Run `docker compose up -d`.
+
+The app joins Shoppa's Docker network, `shoppa_default`, and reaches it at
+`http://shoppa-app-1:8090`; if Shoppa's folder has another name, set
+`SHOPPA_NETWORK` and `SHOPPA_URL` to match (`docker network ls` lists the networks).
+Shoppa elsewhere works too: leave out the compose file and set `SHOPPA_URL` to any
+address the app can reach. Shoppa keeps one item per thing, so sending a list twice
+adds nothing new.
 
 ## Updates and versions
 

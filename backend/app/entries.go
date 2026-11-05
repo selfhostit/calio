@@ -16,26 +16,23 @@ import (
 // How far ahead the morning digest warns about pet sitting nobody has booked.
 const sitterWarning = 7 * 24 * time.Hour
 
-var kindNames = map[string]string{"event": "an event", "petsit": "pet sitting", "trip": "a trip"}
+var kindNames = map[string]string{"event": "Event", "petsit": "Pet sitting", "trip": "Trip"}
 
 func registerEntries(app core.App) {
-	// Every save: the end can't come before the start, and pet sitting starts
-	// out needing a sitter.
+	// Every save: the kind follows the category, the end can't come before
+	// the start, and pet sitting starts out needing a sitter.
 	app.OnRecordValidate("entries").BindFunc(func(e *core.RecordEvent) error {
+		if id := e.Record.GetString("category"); id != "" {
+			if c, err := e.App.FindRecordById("categories", id); err == nil {
+				e.Record.Set("kind", c.GetString("kind"))
+			}
+		}
 		start, end := e.Record.GetDateTime("start"), e.Record.GetDateTime("end")
 		if !end.IsZero() && end.Before(start) {
 			return validation.Errors{"end": validation.NewError("end_before_start", "The end can't be before the start.")}
 		}
 		if e.Record.GetString("kind") == "petsit" && e.Record.GetString("sitter_status") == "" {
 			e.Record.Set("sitter_status", "needed")
-		}
-		return e.Next()
-	})
-
-	// A new contact: remember who added it.
-	app.OnRecordCreateRequest("contacts").BindFunc(func(e *core.RecordRequestEvent) error {
-		if e.Auth != nil && e.Auth.Collection().Name == "users" {
-			e.Record.Set("created_by", e.Auth.Id)
 		}
 		return e.Next()
 	})
@@ -51,14 +48,15 @@ func registerEntries(app core.App) {
 			return err
 		}
 		push.ToEveryone(e.App, byID, push.Message{
-			Title: fmt.Sprintf("%s added %s", byName, kindNames[e.Record.GetString("kind")]),
-			Body:  e.Record.GetString("title") + ", " + when(e.Record),
+			Title: fmt.Sprintf("%s added %s", byName, e.Record.GetString("title")),
+			Body:  categoryName(e.App, e.Record) + " · " + when(e.Record),
 			Tag:   "entry-" + e.Record.Id,
 		})
 		return nil
 	})
 
-	// A sitter is booked: good news for everyone.
+	// A sitter is booked (for the pets, the kids or the house): good news for
+	// everyone.
 	app.OnRecordUpdateRequest("entries").BindFunc(func(e *core.RecordRequestEvent) error {
 		wasBooked := e.Record.Original().GetString("sitter_status") == "booked"
 		if err := e.Next(); err != nil {
@@ -74,15 +72,15 @@ func registerEntries(app core.App) {
 				who = "A sitter"
 			}
 			push.ToEveryone(e.App, byID, push.Message{
-				Title: "Pet sitter booked",
-				Body:  fmt.Sprintf("%s is covering %s", who, when(e.Record)),
+				Title: "Sitter booked",
+				Body:  fmt.Sprintf("%s is covering %s, %s", who, e.Record.GetString("title"), when(e.Record)),
 				Tag:   "entry-" + e.Record.Id,
 			})
 		}
 		return nil
 	})
 
-	// Every morning: what's on today, and pet sitting that still needs someone.
+	// Every morning: what's on today, and sitting that still needs someone.
 	jobs.MustAdd(app, "morning-digest", "30 7 * * *", func(app core.App) error {
 		msg, ok, err := morningDigest(app, time.Now())
 		if err != nil || !ok {
@@ -128,7 +126,7 @@ func morningDigest(app core.App, now time.Time) (push.Message, bool, error) {
 		body = append(body, "Today: "+strings.Join(on, ", "))
 	}
 	if len(sitters) > 0 {
-		body = append(body, "Still needs a pet sitter: "+strings.Join(sitters, ", "))
+		body = append(body, "Still needs a sitter: "+strings.Join(sitters, ", "))
 	}
 	title := "Good morning"
 	if len(on) > 0 {
@@ -225,6 +223,16 @@ func when(r *core.Record) string {
 	default:
 		return start.Format("Mon 2 Jan") + " – " + end.Format("Mon 2 Jan")
 	}
+}
+
+// categoryName is what an entry is, like "Babysitting" or "Trip".
+func categoryName(app core.App, r *core.Record) string {
+	if id := r.GetString("category"); id != "" {
+		if c, err := app.FindRecordById("categories", id); err == nil {
+			return c.GetString("name")
+		}
+	}
+	return kindNames[r.GetString("kind")]
 }
 
 func displayName(u *core.Record) string {

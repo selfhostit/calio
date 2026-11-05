@@ -38,7 +38,7 @@
     return agenda([...once, ...soon, ...later], today);
   });
 
-  // Pet sitting coming up in the next two weeks that nobody has booked yet.
+  // Sitting (pets, kids, the house) coming up in the next two weeks that nobody has booked yet.
   const unbooked = $derived(
     calendar.entries
       .filter((e) => e.kind === 'petsit' && !e.repeat && e.sitter_status !== 'booked')
@@ -63,7 +63,7 @@
         <span
           class="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"
         >
-          <Icon name="paw" />
+          <Icon name={calendar.look(e).icon} />
         </span>
         <button class="min-w-0 flex-1 text-left" onclick={() => onopen(e)}>
           <span class="block font-semibold text-zinc-900 dark:text-zinc-100"
@@ -119,7 +119,7 @@
     </div>
     <p class="mt-2 text-lg font-semibold">Nothing coming up</p>
     <p class="text-sm text-zinc-500">
-      Add a dinner, a trip, or the days someone needs to look after the pets.
+      Add a dinner, a trip, or the days someone needs to look after the pets or the kids.
     </p>
     <button class="btn-primary mt-2" onclick={onadd}>Add something</button>
   </div>

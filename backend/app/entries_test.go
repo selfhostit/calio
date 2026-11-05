@@ -13,11 +13,15 @@ import (
 )
 
 func addEntry(t testing.TB, a core.App, fields map[string]any) *core.Record {
-	entries, err := a.FindCollectionByNameOrId("entries")
+	return addRecord(t, a, "entries", fields)
+}
+
+func addRecord(t testing.TB, a core.App, collection string, fields map[string]any) *core.Record {
+	c, err := a.FindCollectionByNameOrId(collection)
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := core.NewRecord(entries)
+	r := core.NewRecord(c)
 	r.Load(fields)
 	if err := a.Save(r); err != nil {
 		t.Fatal(err)
@@ -156,7 +160,7 @@ func TestMorningDigest(t *testing.T) {
 	if msg.Title != "1 on today" {
 		t.Errorf("title = %q", msg.Title)
 	}
-	want := "Today: Crete. Still needs a pet sitter: Luna (Tue 15 – Thu 17 Dec)"
+	want := "Today: Crete. Still needs a sitter: Luna (Tue 15 – Thu 17 Dec)"
 	if msg.Body != want {
 		t.Errorf("body = %q, want %q", msg.Body, want)
 	}
