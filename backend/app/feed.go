@@ -2,7 +2,6 @@ package app
 
 import (
 	"net/http"
-	"os"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -40,17 +39,7 @@ func feedLink(e *core.RequestEvent, reset bool) error {
 			return e.InternalServerError("", err)
 		}
 	}
-	base, public := strings.TrimRight(os.Getenv("CALIO_FEED_URL"), "/"), true
-	if base == "" {
-		base, public = e.Request.Header.Get("Origin"), false
-		if base == "" {
-			scheme := "http"
-			if e.IsTLS() || e.Request.Header.Get("X-Forwarded-Proto") == "https" {
-				scheme = "https"
-			}
-			base = scheme + "://" + e.Request.Host
-		}
-	}
+	base, public := publicBase(e)
 	return e.JSON(http.StatusOK, map[string]any{
 		"url":    base + feedPrefix + token + ".ics",
 		"public": public,
@@ -69,6 +58,9 @@ func serveFeed(e *core.RequestEvent) error {
 	if err != nil {
 		return e.InternalServerError("", err)
 	}
+	if err := withIcons(e.App, entries); err != nil {
+		return e.InternalServerError("", err)
+	}
 	h := e.Response.Header()
 	h.Set("Content-Type", "text/calendar; charset=utf-8")
 	h.Set("Cache-Control", "private, max-age=300")
@@ -76,6 +68,40 @@ func serveFeed(e *core.RequestEvent) error {
 }
 
 var kindPrefix = map[string]string{"petsit": "🐾 ", "trip": "✈️ "}
+
+// iconPrefix starts the summary of an entry in a category with that icon.
+var iconPrefix = map[string]string{
+	"paw": "🐾 ", "plane": "✈️ ", "baby": "👶 ", "home": "🏠 ", "heart": "❤️ ", "cake": "🎂 ",
+	"cart": "🛒 ", "car": "🚗 ", "work": "💼 ", "health": "🩺 ", "school": "🎒 ", "ball": "⚽ ",
+	"music": "🎵 ", "food": "🍽️ ", "plant": "🌱 ", "star": "⭐ ",
+}
+
+// withIcons loads each entry's category icon into it (as "icon"), for the
+// feed's summaries.
+func withIcons(app core.App, entries []*core.Record) error {
+	categories, err := app.FindAllRecords("categories")
+	if err != nil {
+		return err
+	}
+	icons := map[string]string{}
+	for _, c := range categories {
+		icons[c.Id] = c.GetString("icon")
+	}
+	for _, r := range entries {
+		if icon, ok := icons[r.GetString("category")]; ok {
+			r.WithCustomData(true)
+			r.Set("icon", icon)
+		}
+	}
+	return nil
+}
+
+func summaryPrefix(r *core.Record) string {
+	if icon := r.GetString("icon"); icon != "" {
+		return iconPrefix[icon]
+	}
+	return kindPrefix[r.GetString("kind")]
+}
 
 // icalendar writes entries as an iCalendar (RFC 5545) document.
 func icalendar(entries []*core.Record, now time.Time) string {
@@ -98,7 +124,7 @@ func icalendar(entries []*core.Record, now time.Time) string {
 		}
 		line("DTSTAMP:" + stamp.UTC().Format("20060102T150405Z"))
 
-		summary := kindPrefix[r.GetString("kind")] + r.GetString("title")
+		summary := summaryPrefix(r) + r.GetString("title")
 		if r.GetString("kind") == "petsit" {
 			summary += " (" + sitterLine(r) + ")"
 		}

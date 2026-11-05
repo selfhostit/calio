@@ -1,0 +1,19 @@
+# Optional: lets Calio send shopping lists to Shoppa (github.com/selfhostit/shoppa)
+# running on the same machine. The app joins Shoppa's Docker network and signs in
+# to it as a worker. Enabled by adding :docker-compose.shoppa.yml to COMPOSE_FILE
+# in .env (see docs/deploy.md).
+
+services:
+  app:
+    environment:
+      SHOPPA_URL: ${SHOPPA_URL:-http://shoppa-app-1:8090}
+      SHOPPA_WORKER: ${SHOPPA_WORKER:-}
+      SHOPPA_PASSWORD: ${SHOPPA_PASSWORD:-}
+      SHOPPA_LIST: ${SHOPPA_LIST:-}
+    networks: [default, shoppa]
+
+networks:
+  shoppa:
+    # Shoppa's Compose network: its folder name followed by _default
+    name: ${SHOPPA_NETWORK:-shoppa_default}
+    external: true

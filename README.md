@@ -4,13 +4,14 @@
 
 # Calio
 
-**Your household on one calendar: plans, pet sitting and trips,<br>
+**Your household on one calendar: plans, sitting, trips and the notes a sitter needs,<br>
 running on your own hardware.**
 
 <img src="docs/images/upcoming.png" width="200" alt="The upcoming list, with a trip in progress and a pet sitter still needed">&nbsp;
 <img src="docs/images/month.png" width="200" alt="The month view, with trips and pet sitting as bars across the days">&nbsp;
-<img src="docs/images/add.png" width="200" alt="Adding pet sitting">&nbsp;
-<img src="docs/images/contacts.png" width="200" alt="Contacts: the vet, pet sitters and babysitters">&nbsp;
+<img src="docs/images/add.png" width="200" alt="Adding babysitting, with the household's own categories">&nbsp;
+<img src="docs/images/document.png" width="200" alt="A document about the dog, shared with a sitter by a private link">&nbsp;
+<img src="docs/images/categories.png" width="200" alt="Adding a category with a color and an icon">&nbsp;
 <img src="docs/images/upcoming-dark.png" width="200" alt="The upcoming list in dark mode">
 
 </div>
@@ -18,6 +19,10 @@ running on your own hardware.**
 Calio is a shared calendar for the people you live with. Everyone signs in on their
 own phone and sees the same calendar, live.
 
+- **Your own categories**: Event, Pet sitting and Trip to start, Babysitting to switch
+  on, and any you add (House sitting, Football, Grandma's) with a name, a color and an
+  icon. Switch off what you don't use in Settings > Categories. A category can work
+  like a plain event, like sitting (who's covering it) or like a trip (a packing list).
 - **Events** for dinners, appointments and anything else, with a time and a place.
 - **Pet sitting**: the days someone needs to look after the pets, who the sitter is, and
   whether they are still needed, asked or booked. Unbooked sitting in the next two weeks
@@ -27,17 +32,25 @@ own phone and sees the same calendar, live.
 - **Repeating entries**: every day, week, month or year, until a date if you like.
 - **Checklists**: a packing list on every trip (start from the last trip's list), and a
   checklist on anything else. Ticking items saves right away, so it works while you pack.
+- **Shopping lists** on any entry, for the dinner or the party. With
+  [Shoppa](https://github.com/selfhostit/shoppa) set up, one tap sends what's left to
+  buy to its list (see [docs/deploy.md](docs/deploy.md#shoppa)).
+- **Comments** on entries ("I'll take Luna to the vet first"); everyone else is
+  notified.
 - **Map links**: a place can be an address, "lat, lon" or a pasted map link, and opens in
   Google Maps.
 - **A calendar feed** to subscribe to from Apple Calendar, Outlook or Google Calendar
   (Settings > Calendar feed). Each person's link has its own secret and can be replaced.
   Google Calendar needs the feed reachable from the internet: set `CALIO_FEED_URL` to a
-  public address that serves only `/api/app/feed/` (for example through Tailscale Funnel).
-- **Contacts**: the vet, pet sitters, babysitters, the doctor, with one-tap call, email and
-  map, and notes for things like feeding routines or the door code. A pet sitter's name in
-  pet sitting links to their number.
-- **Upcoming and month views**, filtered by kind, in light and dark mode.
-- **Notifications**: everyone else hears when something is added or a sitter is booked,
+  public address that serves only `/api/app/feed/` and `/api/app/share/` (for example
+  through Tailscale Funnel).
+- **Documents**: a page about the dog ("Wolfy": food, walks, medicine, the vet's number),
+  the house (alarm, plants, bins) or the kids, with photos and files. Share one with a
+  sitter through a private link that needs no account, and stop it working when they're
+  done. Phone numbers and links in a document are one tap.
+- **Upcoming and month views**, filtered by category, in light and dark mode.
+- **Notifications**: everyone else hears when something is added, commented on or a sitter
+  is booked,
   and at 07:30 a morning summary lists what's on today and sitting that still needs someone.
 
 Calio is built on [plasto](https://github.com/selfhostit/plasto): one small container,

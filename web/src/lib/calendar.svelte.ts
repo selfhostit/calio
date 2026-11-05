@@ -1,13 +1,17 @@
-import type { Contact } from './contacts';
+import type { RecordModel, RecordService } from 'pocketbase';
+import { bySort, lookOf, type Category, type Shown } from './categories';
+import type { Doc } from './documents';
 import { dayOf, type Entry } from './entries';
 import { errorMessage, pb, type User } from './pb';
 
-// The household's calendar and its people, kept live: a change anyone makes
-// arrives here through PocketBase's realtime subscription.
+// The household's calendar, its categories, documents and people, kept live:
+// a change anyone makes arrives here through PocketBase's realtime
+// subscription.
 class Calendar {
   entries = $state<Entry[]>([]);
+  categories = $state<Category[]>([]);
+  documents = $state<Doc[]>([]);
   people = $state<User[]>([]);
-  contacts = $state<Contact[]>([]);
   loaded = $state(false);
   error = $state('');
   today = $state(dayOf(new Date()));
@@ -15,39 +19,34 @@ class Calendar {
   #stop: (() => void) | null = null;
 
   async start() {
-    const entries = pb.collection<Entry>('entries');
     try {
-      const [list, people, contacts] = await Promise.all([
-        entries.getFullList({ sort: 'start', batch: 500 }),
+      const [entries, categories, documents, people] = await Promise.all([
+        pb.collection<Entry>('entries').getFullList({ sort: 'start', batch: 500 }),
+        pb.collection<Category>('categories').getFullList({ sort: 'sort,created' }),
+        pb.collection<Doc>('documents').getFullList({ sort: 'title' }),
         pb.collection<User>('users').getFullList({ sort: 'name' }),
-        pb.collection<Contact>('contacts').getFullList({ sort: 'name' }),
       ]);
-      this.entries = list;
+      this.entries = entries;
+      this.categories = categories;
+      this.documents = documents;
       this.people = people;
-      this.contacts = contacts;
       this.loaded = true;
     } catch (err) {
       this.error = errorMessage(err, "Couldn't load the calendar.");
       return;
     }
 
-    const unsubscribe = await entries.subscribe('*', ({ action, record }) => {
-      const rest = this.entries.filter((e) => e.id !== record.id);
-      this.entries = action === 'delete' ? rest : [...rest, record];
-    });
-    const unsubscribeContacts = await pb
-      .collection<Contact>('contacts')
-      .subscribe('*', ({ action, record }) => {
-        const rest = this.contacts.filter((c) => c.id !== record.id);
-        this.contacts = action === 'delete' ? rest : [...rest, record];
-      });
+    const stops = await Promise.all([
+      follow<Entry>('entries', (fn) => (this.entries = fn(this.entries))),
+      follow<Category>('categories', (fn) => (this.categories = fn(this.categories))),
+      follow<Doc>('documents', (fn) => (this.documents = fn(this.documents))),
+    ]);
     // the day changes at midnight, and when the phone wakes the app up
     const tick = () => (this.today = dayOf(new Date()));
     const timer = setInterval(tick, 60_000);
     document.addEventListener('visibilitychange', tick);
     this.#stop = () => {
-      unsubscribe();
-      unsubscribeContacts();
+      stops.forEach((stop) => stop());
       clearInterval(timer);
       document.removeEventListener('visibilitychange', tick);
     };
@@ -62,30 +61,71 @@ class Calendar {
     return this.people.find((p) => p.id === id);
   }
 
+  /** How an entry shows: its category's name, color and icon. */
+  look(e: Pick<Entry, 'kind' | 'category'>): Shown {
+    return lookOf(e, this.categories);
+  }
+
+  get sortedCategories(): Category[] {
+    return [...this.categories].sort(bySort);
+  }
+
   async save(id: string | null, data: Partial<Entry>): Promise<Entry> {
-    const entries = pb.collection<Entry>('entries');
-    const saved = id ? await entries.update(id, data) : await entries.create(data);
+    const saved = await upsert(pb.collection<Entry>('entries'), id, data);
     // show it right away; the realtime event that follows is the same record
-    this.entries = [...this.entries.filter((e) => e.id !== saved.id), saved];
+    this.entries = put(this.entries, saved);
     return saved;
-  }
-
-  async saveContact(id: string | null, data: Partial<Contact>): Promise<Contact> {
-    const contacts = pb.collection<Contact>('contacts');
-    const saved = id ? await contacts.update(id, data) : await contacts.create(data);
-    this.contacts = [...this.contacts.filter((c) => c.id !== saved.id), saved];
-    return saved;
-  }
-
-  async removeContact(id: string) {
-    await pb.collection('contacts').delete(id);
-    this.contacts = this.contacts.filter((c) => c.id !== id);
   }
 
   async remove(id: string) {
     await pb.collection('entries').delete(id);
     this.entries = this.entries.filter((e) => e.id !== id);
   }
+
+  async saveCategory(id: string | null, data: Partial<Category>): Promise<Category> {
+    const saved = await upsert(pb.collection<Category>('categories'), id, data);
+    this.categories = put(this.categories, saved);
+    return saved;
+  }
+
+  async removeCategory(id: string) {
+    await pb.collection('categories').delete(id);
+    this.categories = this.categories.filter((c) => c.id !== id);
+  }
+
+  async saveDocument(id: string | null, data: FormData | Partial<Doc>): Promise<Doc> {
+    const docs = pb.collection<Doc>('documents');
+    const saved = id ? await docs.update(id, data) : await docs.create(data);
+    this.documents = put(this.documents, saved);
+    return saved;
+  }
+
+  /** Puts a document the server changed (shared or not) in place. */
+  async reloadDocument(id: string) {
+    this.documents = put(this.documents, await pb.collection<Doc>('documents').getOne(id));
+  }
+
+  async removeDocument(id: string) {
+    await pb.collection('documents').delete(id);
+    this.documents = this.documents.filter((d) => d.id !== id);
+  }
+}
+
+function upsert<T extends RecordModel>(c: RecordService<T>, id: string | null, data: Partial<T>) {
+  return id ? c.update(id, data) : c.create(data);
+}
+
+function put<T extends RecordModel>(list: T[], r: T): T[] {
+  return [...list.filter((x) => x.id !== r.id), r];
+}
+
+/** Keeps a list up to date with a collection's realtime changes. */
+function follow<T extends RecordModel>(name: string, update: (fn: (list: T[]) => T[]) => void) {
+  return pb.collection<T>(name).subscribe('*', ({ action, record }) => {
+    update((list) =>
+      action === 'delete' ? list.filter((x) => x.id !== record.id) : put(list, record),
+    );
+  });
 }
 
 export const calendar = new Calendar();

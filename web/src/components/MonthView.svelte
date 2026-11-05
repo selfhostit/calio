@@ -12,7 +12,6 @@
     type Day,
     type Entry,
   } from '../lib/entries';
-  import { LOOK } from '../lib/look';
   import EntryRow from './EntryRow.svelte';
   import Icon from './Icon.svelte';
 
@@ -143,12 +142,11 @@
                 {@const [first, last] = span(e)}
                 {@const starts = first === day || i === 0}
                 {@const ends = last === day || i === 6}
+                {@const look = calendar.look(e)}
                 <span
-                  class="block h-1.5 truncate px-1.5 text-[11px] leading-5 font-medium sm:h-5 {LOOK[
-                    e.kind
-                  ].pill} {LOOK[e.kind].bar} {starts ? 'ml-1 rounded-l-full' : '-ml-px'} {ends
-                    ? 'mr-1 rounded-r-full'
-                    : ''} {inMonth ? '' : 'opacity-40'}"
+                  class="block h-1.5 truncate px-1.5 text-[11px] leading-5 font-medium sm:h-5 {look.pill} {look.bar} {starts
+                    ? 'ml-1 rounded-l-full'
+                    : '-ml-px'} {ends ? 'mr-1 rounded-r-full' : ''} {inMonth ? '' : 'opacity-40'}"
                 >
                   <span class="hidden sm:inline">{starts ? e.title : ' '}</span>
                 </span>

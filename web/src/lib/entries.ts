@@ -21,6 +21,10 @@ export interface Entry extends RecordModel {
   repeat: Repeat | '';
   repeat_until: string;
   checklist: ChecklistItem[] | null;
+  /** A list of things to buy, which can be sent to Shoppa. */
+  shopping: ChecklistItem[] | null;
+  /** The category's id; the kind follows it. */
+  category: string;
   /** Set on a repeat of an entry: a key unique to that occurrence. */
   key?: string;
 }
@@ -38,12 +42,6 @@ export const REPEATS: { repeat: Repeat | ''; label: string }[] = [
   { repeat: 'weekly', label: 'Every week' },
   { repeat: 'monthly', label: 'Every month' },
   { repeat: 'yearly', label: 'Every year' },
-];
-
-export const KINDS: { kind: Kind; label: string; plural: string }[] = [
-  { kind: 'event', label: 'Event', plural: 'Events' },
-  { kind: 'petsit', label: 'Pet sitting', plural: 'Pet sitting' },
-  { kind: 'trip', label: 'Trip', plural: 'Trips' },
 ];
 
 export const SITTER_STATUS: { status: SitterStatus; label: string }[] = [
@@ -272,9 +270,13 @@ export function placeLabel(location: string): string {
   return /^https?:\/\//i.test(location.trim()) ? 'Map' : location;
 }
 
-/** "3/12" for a checklist, or '' when there is none. */
+/** "3/12" for a checklist (or a shopping list), or '' when there is none. */
 export function checklistLabel(e: Pick<Entry, 'checklist'>): string {
-  const items = e.checklist ?? [];
+  return listLabel(e.checklist);
+}
+
+export function listLabel(list: ChecklistItem[] | null): string {
+  const items = list ?? [];
   if (!items.length) return '';
   return `${items.filter((i) => i.done).length}/${items.length}`;
 }

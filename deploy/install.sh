@@ -14,7 +14,7 @@ app=calio
 repo=${CALIO_REPO:-selfhostit/calio}
 source=${CALIO_SOURCE:-https://raw.githubusercontent.com/$repo/main/deploy}
 dir=${1:-${CALIO_DIR:-$HOME/$app}}
-files="docker-compose.yml docker-compose.tailscale.yml docker-compose.funnel.yml tailscale-serve.json tailscale-feed-serve.json .env.example"
+files="docker-compose.yml docker-compose.tailscale.yml docker-compose.funnel.yml docker-compose.shoppa.yml tailscale-serve.json tailscale-feed-serve.json .env.example"
 
 say() { printf '\033[1m%s\033[0m\n' "$*"; }
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
