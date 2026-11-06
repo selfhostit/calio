@@ -37,7 +37,8 @@
   const chips = $derived(offered(calendar.categories));
   let selected = $state<Day>(calendar.today);
   let sheet = $state<{ entry: Entry | null; day: Day } | null>(null);
-  let settings = $state(false);
+  // open, and whether to go straight to importing calendars
+  let settings = $state<false | 'open' | 'import'>(false);
 
   const entries = $derived(
     filter === 'all' ? calendar.entries : calendar.entries.filter((e) => e.category === filter),
@@ -99,7 +100,7 @@
       <span class="inline-flex items-center gap-2 text-lg font-bold tracking-tight">
         <img src="/icons/icon.svg" alt="" class="size-7 rounded-lg" /> Calio
       </span>
-      <button class="rounded-full" onclick={() => (settings = true)} aria-label="Settings">
+      <button class="rounded-full" onclick={() => (settings = 'open')} aria-label="Settings">
         <Avatar person={session.user!} size="size-9 text-sm" />
       </button>
     </div>
@@ -189,7 +190,7 @@
         {/each}
       </div>
     {:else if view === 'upcoming'}
-      <Agenda {entries} onopen={open} onadd={() => add()} />
+      <Agenda {entries} onopen={open} onadd={() => add()} onimport={() => (settings = 'import')} />
     {:else if view === 'month'}
       <MonthView {entries} bind:selected onopen={open} onadd={add} />
     {:else}
@@ -213,5 +214,5 @@
   <DocumentSheet doc={docSheet.doc} onclose={() => (docSheet = null)} />
 {/if}
 {#if settings}
-  <Settings onclose={() => (settings = false)} />
+  <Settings importing={settings === 'import'} onclose={() => (settings = false)} />
 {/if}

@@ -17,7 +17,13 @@
     entries,
     onopen,
     onadd,
-  }: { entries: Entry[]; onopen: (e: Entry) => void; onadd: () => void } = $props();
+    onimport,
+  }: {
+    entries: Entry[];
+    onopen: (e: Entry) => void;
+    onadd: () => void;
+    onimport: () => void;
+  } = $props();
 
   // Everything coming up. Repeats show for the next two weeks, or just the
   // next one when that's further out (a birthday in May shows in January).
@@ -122,5 +128,8 @@
       Add a dinner, a trip, or the days someone needs to look after the pets or the kids.
     </p>
     <button class="btn-primary mt-2" onclick={onadd}>Add something</button>
+    <button class="text-sm font-medium text-brand-600 dark:text-brand-400" onclick={onimport}
+      >or import from Google, Outlook or Apple Calendar</button
+    >
   </div>
 {/if}

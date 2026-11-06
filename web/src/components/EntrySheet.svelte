@@ -125,6 +125,10 @@
   }
   let busy = $state(false);
   let error = $state('');
+  // the calendar it was subscribed from, which updates it
+  const source = $derived(
+    editing?.calendar ? calendar.subscriptions.find((s) => s.id === editing.calendar) : undefined,
+  );
 
   const canDelete = $derived(
     !!editing && (editing.created_by === session.user?.id || session.isOwner),
@@ -220,6 +224,17 @@
 
 <Sheet title={editing ? 'Edit' : 'Add to the calendar'} {onclose}>
   <form class="flex flex-col gap-4 pt-1" onsubmit={save}>
+    {#if source}
+      <p
+        class="flex items-start gap-2 rounded-2xl bg-zinc-50 p-3 text-sm text-zinc-600 dark:bg-zinc-800/50 dark:text-zinc-300"
+      >
+        <Icon name="repeat" class="mt-0.5 size-4 shrink-0" />
+        <span
+          >From <b>{source.name}</b>. Changes there replace the title, times, place and notes here;
+          what you add stays.</span
+        >
+      </p>
+    {/if}
     {#if choices.length > 1}
       <div
         class="grid gap-2 {choices.length === 2

@@ -44,6 +44,10 @@ own phone and sees the same calendar, live.
   Google Calendar needs the feed reachable from the internet: set `CALIO_FEED_URL` to a
   public address that serves only `/api/app/feed/` and `/api/app/share/` (for example
   through Tailscale Funnel).
+- **Calendar import**: bring in Google Calendar, Outlook, Apple Calendar (iCloud), Proton
+  and others, by their link (kept up to date every half hour) or from an `.ics` file
+  (Settings > Import calendars). Steps for each app are in the app and in
+  [docs/importing.md](docs/importing.md).
 - **Documents**: a page about the dog ("Wolfy": food, walks, medicine, the vet's number),
   the house (alarm, plants, bins) or the kids, with photos and files. Share one with a
   sitter through a private link that needs no account, and stop it working when they're
