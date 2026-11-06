@@ -57,7 +57,7 @@
           <span
             class="inline-flex items-center gap-2 rounded-full bg-zinc-100 py-1 pr-3 pl-1 dark:bg-zinc-800"
           >
-            <Avatar person={p} size="size-6 text-[10px]" />{p.name || p.email}
+            <Avatar person={p} size="size-6 text-[10px]" />{p.name || p.email || 'No name yet'}
           </span>
         {/each}
       </div>
