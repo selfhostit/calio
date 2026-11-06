@@ -10,7 +10,7 @@
     class="inline-flex shrink-0 items-center justify-center rounded-full font-semibold ring-2 ring-white dark:ring-zinc-900 {avatarColor(
       person.id,
     )} {size}"
-    title={person.name || person.email}
+    title={person.name || person.email || firstName(person)}
   >
     {firstName(person).slice(0, 1).toUpperCase()}
   </span>

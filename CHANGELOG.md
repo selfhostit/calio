@@ -5,6 +5,9 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- Fixed: the add and edit form didn't open when someone in the household had no name
+  set, because the app tried to use their email, which only they can see.
+
 ## 0.2.0 (2026-11-05)
 
 - Categories: choose which ones the household uses (Event, Pet sitting, Trip,

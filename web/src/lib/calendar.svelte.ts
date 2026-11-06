@@ -133,7 +133,9 @@ export const calendar = new Calendar();
 /** A person's short name for avatars and lists. */
 export function firstName(u: User | undefined): string {
   if (!u) return '';
-  return (u.name || u.email.split('@')[0]).trim().split(/\s+/)[0];
+  // other people's email isn't sent, so someone without a name has neither
+  const name = (u.name || u.email?.split('@')[0] || '').trim();
+  return name ? name.split(/\s+/)[0] : 'Someone';
 }
 
 /** A stable color for a person's avatar. */
