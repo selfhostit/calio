@@ -1,6 +1,7 @@
 import type { RecordModel, RecordService } from 'pocketbase';
 import { bySort, lookOf, type Category, type Shown } from './categories';
 import type { Doc } from './documents';
+import type { Subscription } from './imports';
 import { dayOf, type Entry } from './entries';
 import { errorMessage, pb, type User } from './pb';
 
@@ -11,6 +12,8 @@ class Calendar {
   entries = $state<Entry[]>([]);
   categories = $state<Category[]>([]);
   documents = $state<Doc[]>([]);
+  /** Calendars the household subscribes to by their link. */
+  subscriptions = $state<Subscription[]>([]);
   people = $state<User[]>([]);
   loaded = $state(false);
   error = $state('');
@@ -20,16 +23,18 @@ class Calendar {
 
   async start() {
     try {
-      const [entries, categories, documents, people] = await Promise.all([
+      const [entries, categories, documents, people, subscriptions] = await Promise.all([
         pb.collection<Entry>('entries').getFullList({ sort: 'start', batch: 500 }),
         pb.collection<Category>('categories').getFullList({ sort: 'sort,created' }),
         pb.collection<Doc>('documents').getFullList({ sort: 'title' }),
         pb.collection<User>('users').getFullList({ sort: 'name' }),
+        pb.collection<Subscription>('calendars').getFullList({ sort: 'created' }),
       ]);
       this.entries = entries;
       this.categories = categories;
       this.documents = documents;
       this.people = people;
+      this.subscriptions = subscriptions;
       this.loaded = true;
     } catch (err) {
       this.error = errorMessage(err, "Couldn't load the calendar.");
@@ -40,6 +45,7 @@ class Calendar {
       follow<Entry>('entries', (fn) => (this.entries = fn(this.entries))),
       follow<Category>('categories', (fn) => (this.categories = fn(this.categories))),
       follow<Doc>('documents', (fn) => (this.documents = fn(this.documents))),
+      follow<Subscription>('calendars', (fn) => (this.subscriptions = fn(this.subscriptions))),
     ]);
     // the day changes at midnight, and when the phone wakes the app up
     const tick = () => (this.today = dayOf(new Date()));
@@ -103,6 +109,18 @@ class Calendar {
   /** Puts a document the server changed (shared or not) in place. */
   async reloadDocument(id: string) {
     this.documents = put(this.documents, await pb.collection<Doc>('documents').getOne(id));
+  }
+
+  /** Puts a subscription the server changed (added or refreshed) in place. */
+  putSubscription(s: Subscription) {
+    this.subscriptions = put(this.subscriptions, s);
+  }
+
+  /** Stops a subscription; its entries go with it. */
+  async removeSubscription(id: string) {
+    await pb.collection('calendars').delete(id);
+    this.subscriptions = this.subscriptions.filter((s) => s.id !== id);
+    this.entries = this.entries.filter((e) => e.calendar !== id);
   }
 
   async removeDocument(id: string) {

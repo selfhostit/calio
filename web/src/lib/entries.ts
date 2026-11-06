@@ -25,6 +25,10 @@ export interface Entry extends RecordModel {
   shopping: ChecklistItem[] | null;
   /** The category's id; the kind follows it. */
   category: string;
+  /** The calendar it comes from, when it was subscribed to by its link. */
+  calendar?: string;
+  /** Its id in the calendar it was imported from. */
+  uid?: string;
   /** Set on a repeat of an entry: a key unique to that occurrence. */
   key?: string;
 }

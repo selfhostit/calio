@@ -6,10 +6,16 @@
   import Avatar from './Avatar.svelte';
   import Categories from './Categories.svelte';
   import Feed from './Feed.svelte';
+  import Imports from './Imports.svelte';
   import Notifications from './Notifications.svelte';
   import Sheet from './Sheet.svelte';
 
-  let { onclose }: { onclose: () => void } = $props();
+  let { onclose, importing = false }: { onclose: () => void; importing?: boolean } = $props();
+
+  // opened to import calendars: go straight there
+  $effect(() => {
+    if (importing) document.getElementById('import')?.scrollIntoView({ block: 'start' });
+  });
 
   const user = $derived(session.user!);
   const version = pb
@@ -47,6 +53,8 @@
     <Categories />
 
     <Notifications />
+
+    <Imports />
 
     <Feed />
 

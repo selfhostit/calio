@@ -5,6 +5,9 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- Import calendars: add a Google Calendar, Outlook, iCloud or other calendar by its link,
+  and Calio keeps it up to date every half hour; or import an `.ics` file once. Settings
+  shows how for each app, and so does [docs/importing.md](docs/importing.md).
 - Fixed: the add and edit form didn't open when someone in the household had no name
   set, because the app tried to use their email, which only they can see.
 
