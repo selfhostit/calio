@@ -48,3 +48,19 @@ export function bySort(a: Category, b: Category): number {
 export function offered(categories: Category[], current = ''): Category[] {
   return categories.filter((c) => c.enabled || c.id === current).sort(bySort);
 }
+
+/** Whether a title is about a birthday (as backend/app/birthdays.go reads it). */
+export function isBirthday(title: string): boolean {
+  return /birth ?days?|\bb-?days?\b|verjaardag|geburtstag|cumpleaños|anniversaire|γενέθλια/i.test(
+    title,
+  );
+}
+
+/**
+ * The switched-on category birthdays go in: one named Birthday, else one with
+ * the cake icon.
+ */
+export function birthdayCategory(categories: Category[]): Category | undefined {
+  const plain = offered(categories).filter((c) => c.kind === 'event');
+  return plain.find((c) => isBirthday(c.name)) ?? plain.find((c) => c.icon === 'cake');
+}

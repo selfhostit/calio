@@ -18,7 +18,7 @@ func category(t testing.TB, a core.App, name string) *core.Record {
 }
 
 func TestCategories(t *testing.T) {
-	t.Run("a household starts with four, babysitting switched off", func(t *testing.T) {
+	t.Run("a household starts with five, babysitting switched off", func(t *testing.T) {
 		a := newApp(t)
 		_, token := addUser(t, a, "ada@example.com", "member")
 		if category(t, a, "Babysitting").GetBool("enabled") {
@@ -30,8 +30,8 @@ func TestCategories(t *testing.T) {
 			Headers:        map[string]string{"Authorization": token},
 			ExpectedStatus: http.StatusOK,
 			ExpectedContent: []string{
-				`"totalItems":4`, `"name":"Event"`, `"name":"Pet sitting"`, `"name":"Trip"`,
-				`"name":"Babysitting"`,
+				`"totalItems":5`, `"name":"Event"`, `"name":"Pet sitting"`, `"name":"Trip"`,
+				`"name":"Babysitting"`, `"name":"Birthday"`,
 			},
 			TestAppFactory: func(testing.TB) *tests.TestApp { return a },
 		}).Test(t)

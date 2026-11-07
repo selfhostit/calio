@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lookOf, offered, type Category } from './categories';
+import { birthdayCategory, isBirthday, lookOf, offered, type Category } from './categories';
 
 const cat = (over: Partial<Category>) =>
   ({
@@ -36,5 +36,20 @@ describe('offered', () => {
     const first = cat({ id: 'first', sort: 0 });
     expect(offered([on, off, first]).map((c) => c.id)).toEqual(['first', 'on']);
     expect(offered([on, off, first], 'off').map((c) => c.id)).toEqual(['first', 'off', 'on']);
+  });
+});
+
+describe('birthdays', () => {
+  it('spots a birthday in a title', () => {
+    for (const t of ["Maria's Birthday", 'Leo bday', 'Verjaardag oma', 'Γενέθλια Νίκου'])
+      expect(isBirthday(t)).toBe(true);
+    for (const t of ['Dentist', 'Bdaynamic meeting']) expect(isBirthday(t)).toBe(false);
+  });
+  it('finds the birthday category, if it is switched on', () => {
+    const event = cat({ id: 'e', name: 'Event', icon: 'sparkle', kind: 'event' });
+    const cake = cat({ id: 'b', name: 'Birthday', icon: 'cake', kind: 'event', sort: 4 });
+    expect(birthdayCategory([event, cake])?.id).toBe('b');
+    expect(birthdayCategory([event, { ...cake, name: 'Parties' }])?.id).toBe('b');
+    expect(birthdayCategory([event, { ...cake, enabled: false }])).toBeUndefined();
   });
 });
