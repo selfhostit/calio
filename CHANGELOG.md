@@ -5,6 +5,11 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- A Birthday category (pink, with a cake), switched on for every household. New entries
+  and imported events titled "... birthday" go in it by themselves, and new ones are all
+  day and repeat every year. A household that already made a birthday category (by name, like Birthdays or
+  Verjaardagen, or with the cake icon) keeps that one instead. Birthdays already in the
+  Event category move to it.
 - Import calendars: add a Google Calendar, Outlook, iCloud or other calendar by its link,
   and Calio keeps it up to date every half hour; or import an `.ics` file once. Settings
   shows how for each app, and so does [docs/importing.md](docs/importing.md).

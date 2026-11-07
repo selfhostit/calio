@@ -13,6 +13,8 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
+
+	"github.com/selfhostit/calio/app"
 )
 
 // a calendar with events well in the future, so none is left out as past
@@ -221,5 +223,62 @@ func TestSubscribe(t *testing.T) {
 	left, _ := a.FindRecordsByFilter("entries", "calendar = {:c}", "", 0, 0, map[string]any{"c": c.Id})
 	if len(left) != 0 {
 		t.Errorf("%d entries left after unsubscribing", len(left))
+	}
+}
+
+func TestBirthdaysGoInTheirCategory(t *testing.T) {
+	a := newApp(t)
+	_, token := addUser(t, a, "ada@example.com", "member")
+	birthday := app.BirthdayCategory(a)
+	if birthday == "" {
+		t.Fatal("no birthday category to start with")
+	}
+	call := server(t, a)
+	ics := "BEGIN:VCALENDAR\r\nVERSION:2.0\r\n" +
+		"BEGIN:VEVENT\r\nUID:b1\r\nSUMMARY:Maria's Birthday\r\nDTSTART;VALUE=DATE:20991128\r\nRRULE:FREQ=YEARLY\r\nEND:VEVENT\r\n" +
+		"BEGIN:VEVENT\r\nUID:d1\r\nSUMMARY:Dentist\r\nDTSTART:20991205T090000Z\r\nEND:VEVENT\r\n" +
+		"BEGIN:VEVENT\r\nUID:t1\r\nSUMMARY:Birthday trip\r\nDTSTART;VALUE=DATE:20991210\r\nEND:VEVENT\r\n" +
+		"END:VCALENDAR\r\n"
+	post := func(category, file string) {
+		t.Helper()
+		body, ct := upload(t, map[string]string{"category": category}, file)
+		code, out := call(http.MethodPost, "/api/app/import", body, map[string]string{"Authorization": token, "Content-Type": ct})
+		expect(t, code, out, http.StatusOK)
+	}
+
+	post("", ics)
+	got := entriesByTitle(t, a)
+	if got["Maria's Birthday"].GetString("category") != birthday {
+		t.Error("the birthday didn't go in the birthday category")
+	}
+	if got["Dentist"].GetString("category") == birthday {
+		t.Error("the dentist went in the birthday category")
+	}
+
+	// imported into a trip category, nothing moves
+	trips, _ := a.FindFirstRecordByFilter("categories", "kind = 'trip'")
+	post(trips.Id, strings.ReplaceAll(ics, "UID:", "UID:again-"))
+	trip, _ := a.FindFirstRecordByFilter("entries", "uid = 'again-t1'")
+	if trip.GetString("category") != trips.Id {
+		t.Error("a birthday trip left the trip category")
+	}
+
+	// a calendar named Birthdays goes there whole
+	post("", strings.Replace(strings.ReplaceAll(ics, "UID:", "UID:cal-"), "VERSION:2.0", "VERSION:2.0\r\nX-WR-CALNAME:Birthdays", 1))
+	dentist, _ := a.FindFirstRecordByFilter("entries", "uid = 'cal-d1'")
+	if dentist.GetString("category") != birthday {
+		t.Error("an event of the Birthdays calendar went elsewhere")
+	}
+}
+
+func TestIsBirthday(t *testing.T) {
+	for title, want := range map[string]bool{
+		"Maria's birthday": true, "BIRTHDAYS": true, "Leo's bday": true, "B-day party": true,
+		"Verjaardag oma": true, "Γενέθλια Νίκου": true,
+		"Dentist": false, "Bdaynamic meeting": false,
+	} {
+		if got := app.IsBirthday(title); got != want {
+			t.Errorf("IsBirthday(%q) = %v", title, got)
+		}
 	}
 }

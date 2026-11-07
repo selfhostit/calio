@@ -14,8 +14,11 @@ There are two ways in:
 - **Import a file** copies the events in an `.ics` file once. Importing the same file again
   updates those events and doesn't add them twice.
 
-Either way, you pick the category the events go in. Events that ended more than a year ago
-are left out.
+Either way, you pick the category the events go in. Birthdays go in the **Birthday**
+category by themselves: every event of a calendar named "Birthdays", and any event whose
+title says birthday (or bday, verjaardag, Geburtstag, cumpleaños, anniversaire, γενέθλια).
+That doesn't happen when you import into a trip or sitting category, or when Birthday is
+switched off in Settings. Events that ended more than a year ago are left out.
 
 | App | Link (stays up to date) | File (copied once) |
 | --- | --- | --- |

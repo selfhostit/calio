@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { calendar, firstName } from '../lib/calendar.svelte';
-  import { offered } from '../lib/categories';
+  import { birthdayCategory, isBirthday, offered } from '../lib/categories';
   import {
     SITTER_STATUS,
     allDayValue,
@@ -146,7 +146,31 @@
             : 'Luna and Milo',
   );
 
+  // A new entry titled "... birthday" goes in the birthday category, all day
+  // and every year, until someone picks a category themselves.
+  let picked = $state(false);
+  let auto = false;
+  const birthdays = $derived(birthdayCategory(calendar.categories));
+  $effect(() => {
+    if (editing || picked || !birthdays) return;
+    const on = isBirthday(title);
+    untrack(() => {
+      if (on && !auto) {
+        auto = true;
+        category = birthdays.id;
+        allDay = true;
+        if (!repeat) repeat = 'yearly';
+      } else if (!on && auto) {
+        auto = false;
+        category = choices[0]?.id ?? '';
+        allDay = (choices[0]?.kind ?? 'event') !== 'event';
+        if (repeat === 'yearly') repeat = '';
+      }
+    });
+  });
+
   function pick(id: string) {
+    picked = true;
     category = id;
     // trips and sitting are usually whole days
     if (!editing) allDay = kind !== 'event';

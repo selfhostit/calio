@@ -257,6 +257,13 @@ func saveEvents(app core.App, cal *ical.Calendar, to importTarget, now time.Time
 		if category == "" {
 			category = defaultCategory(tx)
 		}
+		// birthdays go in the birthday category, unless the calendar was put
+		// in a trip or sitting one
+		birthdays := ""
+		if plainCategory(tx, category) {
+			birthdays = BirthdayCategory(tx)
+		}
+		wholeCalendar := birthdays != "" && IsBirthday(cal.Name)
 		existing, err := tx.FindRecordsByFilter("entries", "uid != '' && calendar = {:c}", "", 0, 0,
 			map[string]any{"c": to.calendar})
 		if err != nil {
@@ -283,6 +290,9 @@ func saveEvents(app core.App, cal *ical.Calendar, to importTarget, now time.Time
 				r.Set("calendar", to.calendar)
 				r.Set("kind", "event")
 				r.Set("category", category)
+				if birthdays != "" && (wholeCalendar || IsBirthday(it.title)) {
+					r.Set("category", birthdays)
+				}
 				r.Set("created_by", to.by)
 			}
 			if !fill(r, it) && ok {
