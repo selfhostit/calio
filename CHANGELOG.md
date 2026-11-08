@@ -5,6 +5,8 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- The app image installs Alpine's latest security fixes when it is built, which brings in the
+  patched zlib (CVE-2026-4738).
 - A Birthday category (pink, with a cake), switched on for every household. New entries
   and imported events titled "... birthday" go in it by themselves, and new ones are all
   day and repeat every year. A household that already made a birthday category (by name, like Birthdays or

@@ -20,8 +20,11 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH GOARM=${TARGETVARIANT#v} \
     go build -trimpath -ldflags="-s -w -X github.com/selfhostit/calio/app.Version=$VERSION" -o /calio .
 
 # --- runtime ---
+# apk upgrade pulls in the security fixes Alpine has shipped since the base image was cut
+# (zlib for CVE-2026-4738, for one), so every build gets them without waiting for a new tag.
 FROM alpine:3.24
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates tzdata \
     && adduser -D -u 1000 app \
     && mkdir -p /app/pb_data && chown app:app /app/pb_data
 WORKDIR /app
