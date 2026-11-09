@@ -5,6 +5,11 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- Berries for your red panda: one for each habit done, three more for finishing the day,
+  and a bonus at 7, 30 and 100 days in a row. Skipping a habit on purpose doesn't break
+  the streak. Spend them in the new Shop on outfits (hats, a flower crown, scarves, a bow
+  tie, glasses), which you can put on and take off. Your panda also grows from a cub to a
+  grown-up as you keep up your habits.
 - A red panda of your own, on the new Panda tab. Name it, pick a few daily habits (brush
   teeth, vitamin D, eat healthy, or your own, on the days and times of day you choose) and
   tick them off. Its mood follows the last few days: it glows when you keep up, gets a bit

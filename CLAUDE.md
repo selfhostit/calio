@@ -14,8 +14,11 @@ Plain calendar days and "today" are in `web/src/lib/days.ts` and `today.svelte.t
 
 Everyone also has daily `habits` (with `habit_checks`, one per habit and day) and a
 `companions` record: their own red panda whose mood follows their habits. That code is
-its own area (`web/src/lib/play/`, `web/src/components/play/`) and only shares days with
-the calendar. The app shell (`AppShell.svelte`) shows one section from
+its own area (`web/src/lib/play/`, `web/src/components/play/`, `backend/play/`) and only
+shares days with the calendar. In `backend/play`, `habits` fires `OnCheck` when a habit is
+ticked off; `rewards` (the berry `ledger`, written only by the server) and `shop` (the
+catalog and `inventory`) listen or call in, never the other way round. The habit schedule
+is in both `habits.go` and `habits.ts`: keep them in step. The app shell (`AppShell.svelte`) shows one section from
 `components/sections/` per tab.
 
 ## Commands

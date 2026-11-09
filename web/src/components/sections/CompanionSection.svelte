@@ -10,12 +10,14 @@
   import HabitRow from '../play/HabitRow.svelte';
   import HabitSheet from '../play/HabitSheet.svelte';
   import MeetCompanion from '../play/MeetCompanion.svelte';
+  import ShopSheet from '../play/ShopSheet.svelte';
 
   // Your red panda and today's habits.
   let { tabs }: { tabs: Snippet } = $props();
 
   let sheet = $state<{ habit: Habit | null } | null>(null);
   let error = $state('');
+  let shop = $state(false);
 
   onMount(() => {
     play.start();
@@ -54,6 +56,9 @@
       line={play.line(due.length > 0 && done.length === due.length)}
       done={done.length}
       due={due.length}
+      progress={play.progress}
+      wearing={play.wearing}
+      onshop={() => (shop = true)}
     />
 
     {#if error}<p class="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>{/if}
@@ -110,6 +115,9 @@
   <Fab label="Add a habit" onclick={() => (sheet = { habit: null })} />
 {/if}
 
+{#if shop}
+  <ShopSheet onclose={() => (shop = false)} />
+{/if}
 {#if sheet}
   <HabitSheet habit={sheet.habit} onclose={() => (sheet = null)} />
 {/if}
