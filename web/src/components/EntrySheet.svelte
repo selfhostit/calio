@@ -2,13 +2,13 @@
   import { untrack } from 'svelte';
   import { calendar, firstName } from '../lib/calendar.svelte';
   import { birthdayCategory, isBirthday, offered } from '../lib/categories';
+  import { type Day } from '../lib/days';
   import {
     SITTER_STATUS,
     allDayValue,
     instantValue,
     localInputValue,
     span,
-    type Day,
     type Entry,
     type Kind,
     type SitterStatus,

@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { addDays, parseDate } from './days';
 import {
-  addDays,
   agenda,
   allDayValue,
   mapLink,
-  monthGrid,
   occurrences,
-  parseDate,
   progressLabel,
   span,
   type Entry,
@@ -70,15 +68,6 @@ describe('agenda', () => {
       { day: '2026-12-13', entries: [trip] },
       { day: '2026-12-14', entries: [party] },
     ]);
-  });
-});
-
-describe('monthGrid', () => {
-  it('shows six weeks starting on a Monday', () => {
-    const days = monthGrid(2026, 11); // December 2026 starts on a Tuesday
-    expect(days).toHaveLength(42);
-    expect(days[0]).toBe('2026-11-30');
-    expect(days[1]).toBe('2026-12-01');
   });
 });
 
