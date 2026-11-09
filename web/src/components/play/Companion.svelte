@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Species } from '../../lib/play/companion';
+  import type { MomentKind } from '../../lib/play/moments';
   import type { Mood } from '../../lib/play/mood';
   import type { Stage } from '../../lib/play/shop';
   import RedPanda from './RedPanda.svelte';
@@ -11,15 +12,17 @@
     petted = false,
     wearing = [],
     stage = 'grown',
+    moment = null,
   }: {
     species: Species;
     mood: Mood;
     petted?: boolean;
     wearing?: string[];
     stage?: Stage;
+    moment?: MomentKind | null;
   } = $props();
 </script>
 
 {#if species === 'red_panda'}
-  <RedPanda {mood} {petted} {wearing} {stage} />
+  <RedPanda {mood} {petted} {wearing} {stage} {moment} />
 {/if}

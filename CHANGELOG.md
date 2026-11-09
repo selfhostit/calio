@@ -5,6 +5,11 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- Your red panda notices the calendar: it packs a suitcase the days before a trip, sends
+  postcards while you're away, plays with a visiting pet and puts on a party hat for
+  birthdays. Below your habits, the household shelf shows everyone else's panda and how
+  their day is going, and you can cheer them on once a day (they get a notification). An
+  optional evening reminder at 8 pm tells you how many habits are left.
 - Berries for your red panda: one for each habit done, three more for finishing the day,
   and a bonus at 7, 30 and 100 days in a row. Skipping a habit on purpose doesn't break
   the streak. Spend them in the new Shop on outfits (hats, a flower crown, scarves, a bow

@@ -17,7 +17,10 @@ Everyone also has daily `habits` (with `habit_checks`, one per habit and day) an
 its own area (`web/src/lib/play/`, `web/src/components/play/`, `backend/play/`) and only
 shares days with the calendar. In `backend/play`, `habits` fires `OnCheck` when a habit is
 ticked off; `rewards` (the berry `ledger`, written only by the server) and `shop` (the
-catalog and `inventory`) listen or call in, never the other way round. The habit schedule
+catalog and `inventory`) listen or call in, never the other way round. `social` (cheers) and `nudges` (the evening
+reminder job) sit beside them. The panda sees the calendar only through
+`web/src/lib/calendarMoments.ts`, which turns entries into the plain `Happening`s that
+`lib/play/moments.ts` reads. The habit schedule
 is in both `habits.go` and `habits.ts`: keep them in step. The app shell (`AppShell.svelte`) shows one section from
 `components/sections/` per tab.
 

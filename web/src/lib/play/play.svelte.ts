@@ -136,6 +136,14 @@ class Play {
     for (const [i, h] of starters.entries()) await this.saveHabit(null, { ...h, sort: i });
   }
 
+  /** Turns the evening reminder of habits left on or off. */
+  async setNudges(on: boolean) {
+    if (!this.companion) return;
+    this.companion = await pb
+      .collection<Companion>('companions')
+      .update(this.companion.id, { nudges: on });
+  }
+
   async rename(name: string) {
     if (!this.companion) return;
     this.companion = await pb

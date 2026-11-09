@@ -11,6 +11,7 @@ import (
 	"github.com/pocketbase/pocketbase/tests"
 
 	"github.com/selfhostit/calio/play/habits"
+	"github.com/selfhostit/calio/play/nudges"
 	"github.com/selfhostit/calio/play/rewards"
 )
 
@@ -198,3 +199,85 @@ func TestShop(t *testing.T) {
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }
+
+func TestCheers(t *testing.T) {
+	cheer := func(t *testing.T, a *tests.TestApp, token, to string, status int, want string) {
+		(&tests.ApiScenario{
+			Method:          http.MethodPost,
+			URL:             "/api/app/play/cheer/" + to,
+			Headers:         map[string]string{"Authorization": token},
+			ExpectedStatus:  status,
+			ExpectedContent: []string{want},
+			TestAppFactory:  func(testing.TB) *tests.TestApp { return a },
+		}).Test(t)
+	}
+
+	t.Run("someone with a companion can be cheered on", func(t *testing.T) {
+		a := newApp(t)
+		_, token := addUser(t, a, "ada@example.com", "member")
+		bo, _ := addUser(t, a, "bo@example.com", "member")
+		addRecord(t, a, "companions", map[string]any{"user": bo.Id, "name": "Mochi", "species": "red_panda"})
+		cheer(t, a, token, bo.Id, http.StatusOK, `"to":"`+bo.Id+`"`)
+	})
+
+	t.Run("once a day", func(t *testing.T) {
+		a := newApp(t)
+		ada, token := addUser(t, a, "ada@example.com", "member")
+		bo, _ := addUser(t, a, "bo@example.com", "member")
+		addRecord(t, a, "companions", map[string]any{"user": bo.Id, "name": "Mochi", "species": "red_panda"})
+		addRecord(t, a, "cheers", map[string]any{"from": ada.Id, "to": bo.Id, "day": habits.Today()})
+		cheer(t, a, token, bo.Id, http.StatusBadRequest, "already")
+	})
+
+	t.Run("not yourself", func(t *testing.T) {
+		a := newApp(t)
+		ada, token := addUser(t, a, "ada@example.com", "member")
+		addRecord(t, a, "companions", map[string]any{"user": ada.Id, "name": "Ember", "species": "red_panda"})
+		cheer(t, a, token, ada.Id, http.StatusBadRequest, "yourself")
+	})
+}
+
+func TestNudges(t *testing.T) {
+	a := newApp(t)
+	today := habits.Today()
+	ada, _ := addUser(t, a, "ada@example.com", "member")
+	bo, _ := addUser(t, a, "bo@example.com", "member")
+	cy, _ := addUser(t, a, "cy@example.com", "member")
+	addRecord(t, a, "companions", map[string]any{"user": ada.Id, "name": "Ember", "species": "red_panda", "nudges": true})
+	addRecord(t, a, "companions", map[string]any{"user": bo.Id, "name": "Mochi", "species": "red_panda", "nudges": true})
+	addRecord(t, a, "companions", map[string]any{"user": cy.Id, "name": "Pip", "species": "red_panda"})
+	addHabit(t, a, ada.Id, 2, 1)
+	addHabit(t, a, ada.Id, 1, 1)
+	done := addHabit(t, a, bo.Id, 1, 1)
+	tick(t, a, done, today, 1)
+	addHabit(t, a, cy.Id, 1, 1)
+
+	list, err := nudges.Due(a, today)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Bo is done and Cy didn't ask
+	if len(list) != 1 || list[0].User != ada.Id {
+		t.Fatalf("nudges %+v, want only Ada", list)
+	}
+	if m := list[0].Message; m.Title != "Ember is waiting for you" || m.Body != "2 habits left today." {
+		t.Errorf("message %+v", m)
+	}
+}
+
+func TestGrowing(t *testing.T) {
+	a := newApp(t)
+	today := habits.Today()
+	u, _ := addUser(t, a, "ada@example.com", "member")
+	c := addRecord(t, a, "companions", map[string]any{"user": u.Id, "name": "Ember", "species": "red_panda"})
+	for i := 0; i < 30; i++ {
+		if err := rewards.Award(a, u.Id, 1, "habit", "old"+strconv.Itoa(i), ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tick(t, a, addHabit(t, a, u.Id, 1, 0), today, 1)
+	c, _ = a.FindRecordById("companions", c.Id)
+	if s := c.GetString("stage"); s != "young" {
+		t.Errorf("stage %q after 31 habits, want young", s)
+	}
+}

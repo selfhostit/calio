@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Mood } from '../../lib/play/mood';
   import type { Stage } from '../../lib/play/shop';
+  import type { MomentKind } from '../../lib/play/moments';
+  import CompanionProps from './CompanionProps.svelte';
   import RedPandaOutfit from './RedPandaOutfit.svelte';
 
   // The red panda, drawn in parts (ears, head, face, body, tail) so a mood is
@@ -12,7 +14,20 @@
     petted = false,
     wearing = [],
     stage = 'grown',
-  }: { mood: Mood; petted?: boolean; wearing?: string[]; stage?: Stage } = $props();
+    moment = null,
+  }: {
+    mood: Mood;
+    petted?: boolean;
+    wearing?: string[];
+    stage?: Stage;
+    moment?: MomentKind | null;
+  } = $props();
+
+  // a birthday is a party: the party hat goes on, whatever hat was on
+  const HATS = ['party_hat', 'flower_crown', 'beanie', 'explorer_hat'];
+  const worn = $derived(
+    moment === 'birthday' ? ['party_hat', ...wearing.filter((w) => !HATS.includes(w))] : wearing,
+  );
 
   const size = $derived({ cub: 0.8, young: 0.9, grown: 1 }[stage]);
 
@@ -163,14 +178,18 @@
           fill="none"
         />
       {/if}
-      <RedPandaOutfit {wearing} slot="face" />
-      <RedPandaOutfit {wearing} slot="head" />
+      <RedPandaOutfit wearing={worn} slot="face" />
+      <RedPandaOutfit wearing={worn} slot="head" />
     </g>
 
     <g class="body">
-      <RedPandaOutfit {wearing} slot="neck" />
+      <RedPandaOutfit wearing={worn} slot="neck" />
     </g>
   </g>
+
+  {#if moment}
+    <CompanionProps {moment} />
+  {/if}
 
   {#if mood === 'glowing'}
     <g class="sparkles" fill="#fbbf24">

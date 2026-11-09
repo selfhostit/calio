@@ -10,6 +10,10 @@ export interface Companion extends RecordModel {
   user: string;
   name: string;
   species: Species;
+  /** How grown it is; the server keeps it as habits are done. Empty is a cub. */
+  stage: 'cub' | 'young' | 'grown' | '';
+  /** Whether its person wants an evening reminder of the habits left. */
+  nudges: boolean;
 }
 
 export const SPECIES: Record<Species, { label: string; name: string }> = {
