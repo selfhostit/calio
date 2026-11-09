@@ -142,7 +142,7 @@ backend/            Go app on PocketBase
   migrations/       database schema as code
 web/                Svelte 5 + Tailwind web app
   src/App.svelte    picks setup, sign-in or the app
-  src/components/   screens; Home.svelte is where your app starts
+  src/components/   screens; AppShell.svelte holds the tabs, sections/ what they show
   src/lib/          shared code (API client, session, install) and its tests
   public/           manifest, service worker and icons
 workers/            Python worker kit, your workers, their tests and image
