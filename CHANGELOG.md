@@ -5,6 +5,11 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- A red panda of your own, on the new Panda tab. Name it, pick a few daily habits (brush
+  teeth, vitamin D, eat healthy, or your own, on the days and times of day you choose) and
+  tick them off. Its mood follows the last few days: it glows when you keep up, gets a bit
+  droopy when you don't, and one good day cheers it up. Tap it to pet it. On phones, the
+  tabs you're not on show just their icon.
 - The app image installs Alpine's latest security fixes when it is built, which brings in the
   patched zlib (CVE-2026-4738).
 - A Birthday category (pink, with a cake), switched on for every household. New entries

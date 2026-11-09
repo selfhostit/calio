@@ -1,12 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { calendar } from '../lib/calendar.svelte';
+  import { play } from '../lib/play/play.svelte';
   import { session } from '../lib/session.svelte';
   import { sheets } from '../lib/sheets.svelte';
   import Avatar from './Avatar.svelte';
   import EntrySheet from './EntrySheet.svelte';
   import Icon from './Icon.svelte';
   import CalendarSection from './sections/CalendarSection.svelte';
+  import CompanionSection from './sections/CompanionSection.svelte';
   import DocumentsSection from './sections/DocumentsSection.svelte';
   import Settings from './Settings.svelte';
   import TodayHeader from './TodayHeader.svelte';
@@ -15,11 +17,12 @@
   // and one section at a time, picked with the tabs. A section brings its own
   // toolbar, content and add button; the tabs are passed in for its toolbar.
 
-  type View = 'upcoming' | 'month' | 'documents';
+  type View = 'upcoming' | 'month' | 'documents' | 'companion';
   const TABS: { v: View; label: string; icon: string }[] = [
     { v: 'upcoming', label: 'Upcoming', icon: 'list' },
     { v: 'month', label: 'Month', icon: 'grid' },
     { v: 'documents', label: 'Docs', icon: 'doc' },
+    { v: 'companion', label: 'Panda', icon: 'paw' },
   ];
 
   const saved = (() => {
@@ -41,7 +44,10 @@
 
   onMount(() => {
     calendar.start();
-    return () => calendar.stop();
+    return () => {
+      calendar.stop();
+      play.stop();
+    };
   });
 </script>
 
@@ -55,7 +61,10 @@
         t.v
           ? 'bg-white shadow-sm dark:bg-zinc-700'
           : 'text-zinc-500'}"
-        onclick={() => (view = t.v)}><Icon name={t.icon} class="size-4" />{t.label}</button
+        onclick={() => (view = t.v)}
+        ><Icon name={t.icon} class="size-4" /><span class={view === t.v ? '' : 'max-sm:sr-only'}
+          >{t.label}</span
+        ></button
       >
     {/each}
   </div>
@@ -75,7 +84,9 @@
   </header>
 
   <main class="flex flex-1 flex-col gap-4 px-4 pt-4 pb-28">
-    {#if view === 'documents'}
+    {#if view === 'companion'}
+      <CompanionSection {tabs} />
+    {:else if view === 'documents'}
       <DocumentsSection {tabs} />
     {:else}
       <CalendarSection mode={view} {tabs} />

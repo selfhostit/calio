@@ -1,9 +1,9 @@
-import type { RecordModel, RecordService } from 'pocketbase';
 import { bySort, lookOf, type Category, type Shown } from './categories';
 import type { Doc } from './documents';
 import type { Subscription } from './imports';
 import type { Entry } from './entries';
 import { errorMessage, pb, type User } from './pb';
+import { follow, put, upsert } from './records';
 import { today } from './today.svelte';
 
 // The household's calendar, its categories, documents and people, kept live:
@@ -128,23 +128,6 @@ class Calendar {
     await pb.collection('documents').delete(id);
     this.documents = this.documents.filter((d) => d.id !== id);
   }
-}
-
-function upsert<T extends RecordModel>(c: RecordService<T>, id: string | null, data: Partial<T>) {
-  return id ? c.update(id, data) : c.create(data);
-}
-
-function put<T extends RecordModel>(list: T[], r: T): T[] {
-  return [...list.filter((x) => x.id !== r.id), r];
-}
-
-/** Keeps a list up to date with a collection's realtime changes. */
-function follow<T extends RecordModel>(name: string, update: (fn: (list: T[]) => T[]) => void) {
-  return pb.collection<T>(name).subscribe('*', ({ action, record }) => {
-    update((list) =>
-      action === 'delete' ? list.filter((x) => x.id !== record.id) : put(list, record),
-    );
-  });
 }
 
 export const calendar = new Calendar();
