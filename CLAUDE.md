@@ -10,6 +10,13 @@ with `sitter` and `sitter_status`) or `trip`. Entries have `comments`; `document
 and files, shareable by a private link under `/api/app/share/`) replaced contacts. All-day
 entries store their dates at midnight UTC and are read as plain calendar dates; timed
 entries are real instants (`web/src/lib/entries.ts`, `days` in `backend/app/entries.go`).
+Plain calendar days and "today" are in `web/src/lib/days.ts` and `today.svelte.ts`.
+
+Everyone also has daily `habits` (with `habit_checks`, one per habit and day) and a
+`companions` record: their own red panda whose mood follows their habits. That code is
+its own area (`web/src/lib/play/`, `web/src/components/play/`) and only shares days with
+the calendar. The app shell (`AppShell.svelte`) shows one section from
+`components/sections/` per tab.
 
 ## Commands
 
