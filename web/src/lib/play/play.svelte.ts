@@ -6,6 +6,7 @@ import { today } from '../today.svelte';
 import type { Companion, Species } from './companion';
 import { checkOf, type Check, type Habit } from './habits';
 import { lineFor, moodOf, moodScore } from './mood';
+import { wearing, type Item, type Owned, type Progress } from './shop';
 
 // Your habits, the last week of checks and your companion, kept live. It
 // loads when the Companion tab first opens, so the calendar stays as quick.
@@ -17,6 +18,10 @@ class Play {
   habits = $state<Habit[]>([]);
   checks = $state<Check[]>([]);
   companion = $state<Companion | null>(null);
+  /** Berries, streak and growth; null until loaded. */
+  progress = $state<Progress | null>(null);
+  owned = $state<Owned[]>([]);
+  items = $state<Item[]>([]);
   loaded = $state(false);
   error = $state('');
 
@@ -30,6 +35,11 @@ class Play {
     return this.habits
       .filter((h) => !h.archived)
       .sort((a, b) => a.sort - b.sort || (a.created < b.created ? -1 : 1));
+  }
+
+  /** The ids of what your companion is wearing. */
+  get wearing(): string[] {
+    return wearing(this.owned);
   }
 
   get score(): number {
@@ -53,14 +63,20 @@ class Play {
     const mine = pb.filter('user = {:me}', { me });
     const myChecks = pb.filter('habit.user = {:me}', { me });
     try {
-      const [habits, checks, companions] = await Promise.all([
+      const [habits, checks, companions, owned, progress, shop] = await Promise.all([
         pb.collection<Habit>('habits').getFullList({ filter: mine }),
         pb.collection<Check>('habit_checks').getFullList({
           filter: `${myChecks} && ${pb.filter('day >= {:from}', { from: addDays(today.day, -DAYS_BACK) })}`,
           batch: 500,
         }),
         pb.collection<Companion>('companions').getFullList({ filter: mine }),
+        pb.collection<Owned>('inventory').getFullList({ filter: mine }),
+        pb.send<Progress>('/api/app/play/me', {}),
+        pb.send<{ items: Item[] }>('/api/app/play/shop', {}),
       ]);
+      this.owned = owned;
+      this.progress = progress;
+      this.items = shop.items;
       this.habits = habits;
       this.checks = checks;
       this.companion = companions[0] ?? null;
@@ -77,6 +93,7 @@ class Play {
         (fn) => (this.companion = fn(this.companion ? [this.companion] : [])[0] ?? null),
         mine,
       ),
+      follow<Owned>('inventory', (fn) => (this.owned = fn(this.owned)), mine),
     ]);
     const unfollow = today.follow();
     this.#stop = () => {
@@ -89,6 +106,26 @@ class Play {
     this.#stop?.();
     this.#stop = null;
     this.loaded = false;
+  }
+
+  /** Reloads your berries, streak and growth. */
+  async refresh() {
+    try {
+      this.progress = await pb.send<Progress>('/api/app/play/me', {});
+    } catch {
+      // shown again on the next change
+    }
+  }
+
+  /** Buys an item, which your companion then wears. */
+  async buy(item: Item) {
+    await pb.send('/api/app/play/buy', { method: 'POST', body: { item: item.id } });
+    await this.refresh();
+  }
+
+  /** Puts an item on (taking off what's in its slot) or takes it off. */
+  async wear(item: Item, on: boolean) {
+    await pb.send('/api/app/play/wear', { method: 'POST', body: { item: item.id, on } });
   }
 
   async meet(name: string, species: Species, starters: Partial<Habit>[]) {
@@ -158,6 +195,8 @@ class Play {
         this.checks.filter((x) => x.id !== `new-${h.id}`),
         saved,
       );
+      // the server has given any berries by now
+      void this.refresh();
     } catch (err) {
       this.checks = before;
       throw err;

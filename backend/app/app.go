@@ -10,6 +10,7 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 
+	"github.com/selfhostit/calio/play"
 	"github.com/selfhostit/calio/push"
 )
 
@@ -30,6 +31,7 @@ func Register(app core.App, cfg Config) {
 	registerComments(app)
 	registerDocuments(app)
 	registerImports(app)
+	play.Register(app)
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/api/app/info", info)
