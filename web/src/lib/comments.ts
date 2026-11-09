@@ -1,5 +1,5 @@
 import type { RecordModel } from 'pocketbase';
-import { dayOf, parseDate } from './entries';
+import { dayOf, parseDate } from './days';
 
 // Comments on an entry; everyone else in the household is told about a new one.
 

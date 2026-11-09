@@ -2,8 +2,9 @@ import type { RecordModel, RecordService } from 'pocketbase';
 import { bySort, lookOf, type Category, type Shown } from './categories';
 import type { Doc } from './documents';
 import type { Subscription } from './imports';
-import { dayOf, type Entry } from './entries';
+import type { Entry } from './entries';
 import { errorMessage, pb, type User } from './pb';
+import { today } from './today.svelte';
 
 // The household's calendar, its categories, documents and people, kept live:
 // a change anyone makes arrives here through PocketBase's realtime
@@ -17,9 +18,13 @@ class Calendar {
   people = $state<User[]>([]);
   loaded = $state(false);
   error = $state('');
-  today = $state(dayOf(new Date()));
 
   #stop: (() => void) | null = null;
+
+  /** Today's date; see today.svelte.ts. */
+  get today() {
+    return today.day;
+  }
 
   async start() {
     try {
@@ -47,14 +52,10 @@ class Calendar {
       follow<Doc>('documents', (fn) => (this.documents = fn(this.documents))),
       follow<Subscription>('calendars', (fn) => (this.subscriptions = fn(this.subscriptions))),
     ]);
-    // the day changes at midnight, and when the phone wakes the app up
-    const tick = () => (this.today = dayOf(new Date()));
-    const timer = setInterval(tick, 60_000);
-    document.addEventListener('visibilitychange', tick);
+    const unfollow = today.follow();
     this.#stop = () => {
       stops.forEach((stop) => stop());
-      clearInterval(timer);
-      document.removeEventListener('visibilitychange', tick);
+      unfollow();
     };
   }
 

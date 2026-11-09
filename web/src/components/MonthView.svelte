@@ -1,17 +1,7 @@
 <script lang="ts">
   import { calendar } from '../lib/calendar.svelte';
-  import {
-    byStart,
-    dateOf,
-    isOn,
-    longDayLabel,
-    monthGrid,
-    monthName,
-    occurrences,
-    span,
-    type Day,
-    type Entry,
-  } from '../lib/entries';
+  import { dateOf, longDayLabel, monthGrid, monthName, type Day } from '../lib/days';
+  import { byStart, isOn, occurrences, span, type Entry } from '../lib/entries';
   import EntryRow from './EntryRow.svelte';
   import Icon from './Icon.svelte';
 

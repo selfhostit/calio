@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { errorMessage, pb } from './lib/pb';
   import { session } from './lib/session.svelte';
-  import Home from './components/Home.svelte';
+  import AppShell from './components/AppShell.svelte';
   import Login from './components/Login.svelte';
   import Setup from './components/Setup.svelte';
 
@@ -27,7 +27,7 @@
 </script>
 
 {#if session.user}
-  <Home />
+  <AppShell />
 {:else if error}
   <main class="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center gap-4 px-6">
     <p class="text-center" role="alert">{error}</p>

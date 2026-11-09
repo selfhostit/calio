@@ -170,17 +170,44 @@ Add `web/src/components/Tasks.svelte`:
 </section>
 ```
 
-and show it in `web/src/components/Home.svelte`, after the "Your app starts here"
-card:
+and give it a tab. The app shows one section at a time
+(`web/src/components/sections/`); a section gets the tab bar as a snippet and
+brings its own toolbar, content and add button. Add
+`web/src/components/sections/TasksSection.svelte`:
+
+```svelte
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  import Tasks from '../Tasks.svelte';
+
+  let { tabs }: { tabs: Snippet } = $props();
+</script>
+
+<div class="flex flex-wrap items-center justify-between gap-3">
+  {@render tabs()}
+</div>
+<Tasks />
+```
+
+and list it in `web/src/components/AppShell.svelte`:
 
 ```svelte
 <script lang="ts">
   // …
-  import Tasks from './Tasks.svelte';
+  import TasksSection from './sections/TasksSection.svelte';
+
+  type View = 'upcoming' | 'month' | 'documents' | 'tasks';
+  const TABS = [
+    // …
+    { v: 'tasks', label: 'Tasks', icon: 'check' },
+  ];
 </script>
 
 <!-- … -->
-<Tasks />
+{#if view === 'tasks'}
+  <TasksSection {tabs} />
+{:else if view === 'documents'}
+<!-- … -->
 ```
 
 The page updates as you save. Open it in a second browser window, signed in as

@@ -1,15 +1,7 @@
 <script lang="ts">
   import { calendar } from '../lib/calendar.svelte';
-  import {
-    addDays,
-    agenda,
-    occurrences,
-    dayLabel,
-    inDays,
-    span,
-    whenLabel,
-    type Entry,
-  } from '../lib/entries';
+  import { addDays, dayLabel, inDays } from '../lib/days';
+  import { agenda, occurrences, span, whenLabel, type Entry } from '../lib/entries';
   import EntryRow from './EntryRow.svelte';
   import Icon from './Icon.svelte';
 
