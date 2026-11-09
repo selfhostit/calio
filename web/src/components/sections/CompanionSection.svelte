@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
+  import { calendar } from '../../lib/calendar.svelte';
+  import { happenings } from '../../lib/calendarMoments';
+  import { momentOf } from '../../lib/play/moments';
   import { errorMessage } from '../../lib/pb';
   import { PARTS, doneCount, isDue, type Habit } from '../../lib/play/habits';
   import { play } from '../../lib/play/play.svelte';
@@ -9,6 +12,7 @@
   import CompanionCard from '../play/CompanionCard.svelte';
   import HabitRow from '../play/HabitRow.svelte';
   import HabitSheet from '../play/HabitSheet.svelte';
+  import HouseholdShelf from '../play/HouseholdShelf.svelte';
   import MeetCompanion from '../play/MeetCompanion.svelte';
   import ShopSheet from '../play/ShopSheet.svelte';
 
@@ -31,6 +35,19 @@
       (g) => g.habits.length,
     ),
   );
+
+  const moment = $derived(
+    momentOf(happenings(calendar.entries, calendar.categories, today.day), today.day),
+  );
+
+  async function nudges(on: boolean) {
+    error = '';
+    try {
+      await play.setNudges(on);
+    } catch (err) {
+      error = errorMessage(err);
+    }
+  }
 
   async function tick(h: Habit) {
     error = '';
@@ -58,6 +75,7 @@
       due={due.length}
       progress={play.progress}
       wearing={play.wearing}
+      {moment}
       onshop={() => (shop = true)}
     />
 
@@ -108,6 +126,22 @@
         </ul>
       </section>
     {/if}
+
+    <HouseholdShelf />
+
+    <label class="card flex-row items-center justify-between gap-3 py-3">
+      <span class="flex flex-col">
+        <span class="font-semibold">Evening reminder</span>
+        <span class="text-xs font-normal text-zinc-500 dark:text-zinc-400"
+          >At 8 pm, if habits are left. Needs notifications on (Settings).</span
+        >
+      </span>
+      <input
+        type="checkbox"
+        checked={play.companion.nudges}
+        onchange={(e) => nudges(e.currentTarget.checked)}
+      />
+    </label>
   {/if}
 </Loaded>
 

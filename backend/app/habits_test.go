@@ -135,3 +135,18 @@ func TestCompanions(t *testing.T) {
 		}).Test(t)
 	})
 }
+
+func TestCompanionStage(t *testing.T) {
+	a := newApp(t)
+	u, token := addUser(t, a, "ada@example.com", "member")
+	c := addRecord(t, a, "companions", map[string]any{"user": u.Id, "name": "Ember", "species": "red_panda"})
+	(&tests.ApiScenario{
+		Method:          http.MethodPatch,
+		URL:             "/api/collections/companions/records/" + c.Id,
+		Body:            strings.NewReader(`{"stage":"grown"}`),
+		Headers:         map[string]string{"Authorization": token},
+		ExpectedStatus:  http.StatusNotFound,
+		ExpectedContent: []string{`"status":404`},
+		TestAppFactory:  func(testing.TB) *tests.TestApp { return a },
+	}).Test(t)
+}

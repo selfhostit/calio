@@ -66,6 +66,9 @@ func earn(e *habits.CheckEvent) error {
 		if err := Award(e.App, e.User, PerHabit, "habit", "habit:"+e.Habit.Id+":"+e.Day, e.Day); err != nil {
 			return err
 		}
+		if err := grow(e.App, e.User); err != nil {
+			return err
+		}
 	}
 	if !e.DayDone {
 		return nil
@@ -79,6 +82,23 @@ func earn(e *habits.CheckEvent) error {
 	}
 	if bonus, ok := Milestones[h.Streak(e.Day, streakDays)]; ok {
 		return Award(e.App, e.User, bonus, "streak", "streak:"+e.User+":"+e.Day, e.Day)
+	}
+	return nil
+}
+
+// grow keeps the companion's stage up to date, so the household sees it.
+func grow(app core.App, user string) error {
+	c, err := app.FindFirstRecordByData("companions", "user", user)
+	if err != nil {
+		return nil // no companion yet
+	}
+	lifetime, err := Lifetime(app, user)
+	if err != nil {
+		return err
+	}
+	if stage := Stage(lifetime); c.GetString("stage") != stage {
+		c.Set("stage", stage)
+		return app.Save(c)
 	}
 	return nil
 }

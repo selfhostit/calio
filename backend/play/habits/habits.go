@@ -169,6 +169,20 @@ func (h *History) Streak(day string, back int) int {
 	return n
 }
 
+// Left is how many habits due on a day aren't done yet.
+func (h *History) Left(day string) int {
+	n := 0
+	for _, habit := range h.habits {
+		if !h.Due(habit, day) {
+			continue
+		}
+		if c := h.check(habit, day); c == nil || c.GetInt("count") < habit.GetInt("times") {
+			n++
+		}
+	}
+	return n
+}
+
 func (h *History) anyDue(day string) bool {
 	for _, habit := range h.habits {
 		if h.Due(habit, day) {

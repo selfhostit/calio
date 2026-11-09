@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Companion as Pal } from '../../lib/play/companion';
+  import type { Moment } from '../../lib/play/moments';
   import { MOODS, type Mood } from '../../lib/play/mood';
   import { STAGES, type Progress } from '../../lib/play/shop';
   import Icon from '../Icon.svelte';
@@ -15,6 +16,7 @@
     due,
     progress,
     wearing,
+    moment,
     onshop,
   }: {
     companion: Pal;
@@ -24,6 +26,8 @@
     due: number;
     progress: Progress | null;
     wearing: string[];
+    /** What's on the calendar that it reacts to, if anything. */
+    moment: Moment | null;
     onshop: () => void;
   } = $props();
 
@@ -68,6 +72,7 @@
         {petted}
         {wearing}
         stage={progress?.stage ?? 'grown'}
+        moment={moment?.kind ?? null}
       />
       {#each hearts as h (h)}
         <span class="heart pointer-events-none absolute top-6 left-1/2 text-rose-500"
@@ -88,7 +93,7 @@
       <p
         class="bubble relative rounded-2xl bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700"
       >
-        {line}
+        {moment?.line ?? line}
       </p>
     </div>
   </div>
