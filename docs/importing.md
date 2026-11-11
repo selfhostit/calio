@@ -8,7 +8,8 @@ There are two ways in:
 
 - **Add a calendar link** keeps it up to date. Calio fetches the link right away and then
   every half hour. When an event changes there, its title, times, place and notes change in
-  Calio too, and events deleted there go away. Anything you add in Calio stays: the sitter,
+  Calio too, and events deleted there go away. If you move an event (or retitle it) in Calio,
+  that stays until the event changes in its own calendar. Anything you add in Calio stays: the sitter,
   checklists, shopping lists, comments, the category and who's going. Removing the calendar
   removes its events.
 - **Import a file** copies the events in an `.ics` file once. Importing the same file again
@@ -20,13 +21,13 @@ title says birthday (or bday, verjaardag, Geburtstag, cumpleaños, anniversaire,
 That doesn't happen when you import into a trip or sitting category, or when Birthday is
 switched off in Settings. Events that ended more than a year ago are left out.
 
-| App | Link (stays up to date) | File (copied once) |
-| --- | --- | --- |
-| Google Calendar | Yes, the secret iCal address | Yes, Import & export |
-| Outlook.com and Microsoft 365 | Yes, publish the calendar | Outlook for Windows only |
-| Apple Calendar (iCloud) | Yes, a public calendar link | Calendar on a Mac |
-| Proton Calendar | Yes, a share link | Yes |
-| Fastmail, Nextcloud, Thunderbird, others | Usually: an iCal, ICS or webcal link | Usually |
+| App                                      | Link (stays up to date)              | File (copied once)       |
+| ---------------------------------------- | ------------------------------------ | ------------------------ |
+| Google Calendar                          | Yes, the secret iCal address         | Yes, Import & export     |
+| Outlook.com and Microsoft 365            | Yes, publish the calendar            | Outlook for Windows only |
+| Apple Calendar (iCloud)                  | Yes, a public calendar link          | Calendar on a Mac        |
+| Proton Calendar                          | Yes, a share link                    | Yes                      |
+| Fastmail, Nextcloud, Thunderbird, others | Usually: an iCal, ICS or webcal link | Usually                  |
 
 ## Google Calendar
 

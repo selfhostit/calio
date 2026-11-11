@@ -1,7 +1,8 @@
 <script lang="ts">
   import { calendar } from '../lib/calendar.svelte';
-  import { dateOf, longDayLabel, monthGrid, monthName, type Day } from '../lib/days';
+  import { dateOf, daysBetween, longDayLabel, monthGrid, monthName, type Day } from '../lib/days';
   import { byStart, isOn, occurrences, span, type Entry } from '../lib/entries';
+  import { moveBy } from '../lib/reschedule';
   import EntryRow from './EntryRow.svelte';
   import Icon from './Icon.svelte';
 
@@ -74,6 +75,36 @@
     selected = calendar.today;
   }
 
+  // With a mouse, an entry's bar can be dragged to another day. It moves by
+  // as many days as it was dragged (a repeat moves its whole series), and the
+  // toast that follows can undo it. Phones move entries in the form instead.
+  let dragging = $state<{ id: string; from: Day } | null>(null);
+  let over = $state<Day | null>(null);
+
+  function dragStart(ev: DragEvent, e: Entry, from: Day) {
+    if (!ev.dataTransfer) return;
+    ev.dataTransfer.effectAllowed = 'move';
+    ev.dataTransfer.setData('text/plain', e.title);
+    dragging = { id: e.id, from };
+  }
+
+  function dragOver(ev: DragEvent, day: Day) {
+    if (!dragging) return;
+    ev.preventDefault();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+    over = day;
+  }
+
+  function drop(ev: DragEvent, day: Day) {
+    if (!dragging) return;
+    ev.preventDefault();
+    const { id, from } = dragging;
+    dragging = over = null;
+    selected = day;
+    const entry = calendar.entries.find((e) => e.id === id);
+    if (entry) moveBy(entry, daysBetween(from, day));
+  }
+
   const WEEKDAYS = Array.from({ length: 7 }, (_, i) =>
     new Intl.DateTimeFormat(undefined, { weekday: 'narrow' }).format(new Date(2024, 0, 1 + i)),
   );
@@ -109,19 +140,29 @@
           {@const inMonth = dateOf(day).getMonth() === month}
           {@const isToday = day === calendar.today}
           {@const isSelected = day === selected}
-          <button
-            class="relative flex min-h-16 flex-col gap-0.5 py-1 text-left transition sm:min-h-24 {isSelected
-              ? 'bg-zinc-100 dark:bg-zinc-800/70'
-              : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'} {i > 0
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class="relative flex min-h-16 flex-col gap-0.5 py-1 sm:min-h-24 {i > 0
               ? 'border-l border-zinc-100 dark:border-zinc-800/70'
               : ''}"
-            onclick={() => (selected = day)}
-            ondblclick={() => onadd(day)}
-            aria-label={longDayLabel(day)}
-            aria-pressed={isSelected}
+            ondragover={(ev) => dragOver(ev, day)}
+            ondragleave={() => over === day && (over = null)}
+            ondrop={(ev) => drop(ev, day)}
           >
+            <!-- the whole day picks it; the bars on top of it can be dragged -->
+            <button
+              class="absolute inset-0 transition {isSelected
+                ? 'bg-zinc-100 dark:bg-zinc-800/70'
+                : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'} {over === day
+                ? 'bg-brand-500/10! ring-2 ring-brand-500 ring-inset'
+                : ''}"
+              onclick={() => (selected = day)}
+              ondblclick={() => onadd(day)}
+              aria-label={longDayLabel(day)}
+              aria-pressed={isSelected}
+            ></button>
             <span
-              class="mx-auto grid size-7 place-items-center rounded-full text-sm sm:mx-1.5 {isToday
+              class="pointer-events-none relative mx-auto grid size-7 place-items-center rounded-full text-sm sm:mx-1.5 {isToday
                 ? 'bg-brand-600 font-semibold text-white'
                 : inMonth
                   ? 'font-medium'
@@ -133,23 +174,32 @@
                 {@const starts = first === day || i === 0}
                 {@const ends = last === day || i === 6}
                 {@const look = calendar.look(e)}
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <span
-                  class="block h-1.5 truncate px-1.5 text-[11px] leading-5 font-medium sm:h-5 {look.pill} {look.bar} {starts
+                  class="pointer-events-none relative block h-1.5 truncate px-1.5 text-[11px] leading-5 font-medium select-none sm:h-5 pointer-fine:pointer-events-auto pointer-fine:cursor-grab {look.pill} {look.bar} {starts
                     ? 'ml-1 rounded-l-full'
-                    : '-ml-px'} {ends ? 'mr-1 rounded-r-full' : ''} {inMonth ? '' : 'opacity-40'}"
+                    : '-ml-px'} {ends ? 'mr-1 rounded-r-full' : ''} {inMonth
+                    ? ''
+                    : 'opacity-40'} {dragging?.id === e.id ? 'opacity-50' : ''}"
+                  draggable="true"
+                  title="{e.title}: drag to move"
+                  ondragstart={(ev) => dragStart(ev, e, day)}
+                  ondragend={() => (dragging = over = null)}
+                  onclick={() => onopen(e)}
                 >
-                  <span class="hidden sm:inline">{starts ? e.title : ' '}</span>
+                  <span class="hidden sm:inline">{starts ? e.title : ' '}</span>
                 </span>
               {:else}
                 <span class="block h-1.5 sm:h-5"></span>
               {/if}
             {/each}
             {#if layout[w].more[i]}
-              <span class="px-1.5 text-[10px] font-semibold text-zinc-400"
+              <span
+                class="pointer-events-none relative px-1.5 text-[10px] font-semibold text-zinc-400"
                 >+{layout[w].more[i]}</span
               >
             {/if}
-          </button>
+          </div>
         {/each}
       </div>
     {/each}

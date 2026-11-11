@@ -113,16 +113,23 @@ export function occurrences(entries: Entry[], from: Day, to: Day): Entry[] {
 
 /** A copy of an entry moved to another first day, keeping its times. */
 function moveTo(e: Entry, day: Day, n: number): Entry {
-  const [first] = span(e);
+  return { ...e, ...shiftBy(e, daysBetween(span(e)[0], day)), key: `${e.id}:${n}` };
+}
+
+/**
+ * An entry's start and end moved by a number of days, keeping its times of
+ * day (across a change to or from summer time too) and how long it is.
+ */
+export function shiftBy(e: Pick<Entry, 'start' | 'end' | 'all_day'>, days: number) {
   const shift = (s: string) => {
     if (!s) return s;
-    if (e.all_day) return allDayValue(addDays(s.slice(0, 10), daysBetween(first, day)));
+    if (e.all_day) return allDayValue(addDays(s.slice(0, 10), days));
     const d = parseDate(s)!;
-    const moved = dateOf(addDays(dayOf(d), daysBetween(first, day)));
+    const moved = dateOf(addDays(dayOf(d), days));
     moved.setHours(d.getHours(), d.getMinutes(), d.getSeconds());
     return moved.toISOString().replace('T', ' ');
   };
-  return { ...e, start: shift(e.start), end: shift(e.end), key: `${e.id}:${n}` };
+  return { start: shift(e.start), end: shift(e.end) };
 }
 
 /** Sorts entries by when they start, all-day ones first on the same day. */

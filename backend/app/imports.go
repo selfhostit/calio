@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -325,7 +327,11 @@ func saveEvents(app core.App, cal *ical.Calendar, to importTarget, now time.Time
 	return res, err
 }
 
-// fill sets an entry's fields from an event, telling whether anything changed.
+// fill brings an entry up to date with its event, telling whether it needs
+// saving. The entry keeps a fingerprint of the event as it was last read
+// ("source"): while the event stays the same there, the entry is left alone,
+// so changes made in Calio (moving it to another day, a new title) stick.
+// Once the event changes in its calendar, that calendar wins.
 func fill(r *core.Record, it item) bool {
 	start := dbTime(it.start, it.allDay)
 	end := ""
@@ -340,28 +346,26 @@ func fill(r *core.Record, it item) bool {
 	if !it.repeatUntil.IsZero() {
 		until = dbTime(it.repeatUntil, true)
 	}
-	values := map[string]any{
-		"title": it.title, "notes": it.notes, "location": it.location, "all_day": it.allDay,
-		"start": start, "end": end, "repeat": it.repeat, "repeat_until": until,
+	values := []struct {
+		field string
+		value any
+	}{
+		{"title", it.title}, {"notes", it.notes}, {"location", it.location}, {"all_day", it.allDay},
+		{"start", start}, {"end", end}, {"repeat", it.repeat}, {"repeat_until", until},
 	}
-	changed := false
-	for k, v := range values {
-		var now any = r.GetString(k)
-		switch k {
-		case "all_day":
-			now = r.GetBool(k)
-		case "start", "end", "repeat_until":
-			now = ""
-			if t := r.GetDateTime(k); !t.IsZero() {
-				now = t.String()
-			}
-		}
-		if now != v {
-			r.Set(k, v)
-			changed = true
-		}
+	sum := sha256.New()
+	for _, v := range values {
+		fmt.Fprintf(sum, "%s=%v\x00", v.field, v.value)
 	}
-	return changed
+	source := hex.EncodeToString(sum.Sum(nil))
+	if r.GetString("source") == source {
+		return false
+	}
+	r.Set("source", source)
+	for _, v := range values {
+		r.Set(v.field, v.value)
+	}
+	return true
 }
 
 // dbTime writes a time the way PocketBase stores it; all-day dates at
