@@ -6,9 +6,6 @@
   import {
     SITTER_STATUS,
     allDayValue,
-    instantValue,
-    localInputValue,
-    span,
     type Entry,
     type Kind,
     type SitterStatus,
@@ -18,13 +15,16 @@
     mapLink,
   } from '../lib/entries';
   import { errorMessage } from '../lib/pb';
+  import { offerUndo } from '../lib/reschedule';
   import { sendToShoppa, shoppaEnabled } from '../lib/shoppa';
   import { session } from '../lib/session.svelte';
+  import { datesOf, problem, whenOf, whenOn, withAllDay, type When } from '../lib/when';
   import Avatar from './Avatar.svelte';
   import Checklist from './Checklist.svelte';
   import Comments from './Comments.svelte';
   import Icon from './Icon.svelte';
   import Sheet from './Sheet.svelte';
+  import WhenFields from './WhenFields.svelte';
 
   let {
     entry = null,
@@ -34,7 +34,6 @@
 
   // the form starts from the entry (or day) it was opened with
   const { editing, first } = untrack(() => ({ editing: entry, first: day }));
-  const initial = editing ? span(editing) : [first, first];
 
   // the categories switched on, and this entry's own
   const choices = $derived(offered(calendar.categories, editing?.category));
@@ -43,13 +42,15 @@
   const kind = $derived<Kind>(chosen?.kind ?? editing?.kind ?? 'event');
   const look = $derived(calendar.look({ kind, category }));
   let title = $state(editing?.title ?? '');
-  let allDay = $state(editing ? editing.all_day : untrack(() => kind !== 'event'));
-  let startDay = $state(initial[0]);
-  let endDay = $state(initial[1]);
-  let startAt = $state(
-    editing && !editing.all_day ? localInputValue(editing.start) : `${first}T18:00`,
+  let when = $state<When>(
+    editing
+      ? whenOf(editing)
+      : whenOn(
+          first,
+          untrack(() => kind !== 'event'),
+        ),
   );
-  let endAt = $state(editing && !editing.all_day ? localInputValue(editing.end) : '');
+  const setAllDay = (on: boolean) => (when = withAllDay(when, on));
   let location = $state(editing?.location ?? '');
   let notes = $state(editing?.notes ?? '');
   let people = $state<string[]>(editing?.people ?? (session.user ? [session.user.id] : []));
@@ -158,12 +159,12 @@
       if (on && !auto) {
         auto = true;
         category = birthdays.id;
-        allDay = true;
+        setAllDay(true);
         if (!repeat) repeat = 'yearly';
       } else if (!on && auto) {
         auto = false;
         category = choices[0]?.id ?? '';
-        allDay = (choices[0]?.kind ?? 'event') !== 'event';
+        setAllDay((choices[0]?.kind ?? 'event') !== 'event');
         if (repeat === 'yearly') repeat = '';
       }
     });
@@ -173,32 +174,23 @@
     picked = true;
     category = id;
     // trips and sitting are usually whole days
-    if (!editing) allDay = kind !== 'event';
+    if (!editing) setAllDay(kind !== 'event');
   }
 
   function togglePerson(id: string) {
     people = people.includes(id) ? people.filter((p) => p !== id) : [...people, id];
   }
 
-  $effect(() => {
-    if (endDay && endDay < startDay) endDay = startDay;
-  });
-
   async function save(e: SubmitEvent) {
     e.preventDefault();
+    error = problem(when);
+    if (error) return;
     busy = true;
-    error = '';
     const data: Partial<Entry> = {
       title: title.trim(),
       category,
       kind,
-      all_day: allDay,
-      start: allDay ? allDayValue(startDay) : instantValue(startAt),
-      end: allDay
-        ? endDay && endDay !== startDay
-          ? allDayValue(endDay)
-          : ''
-        : instantValue(endAt),
+      ...datesOf(when),
       location: kind === 'petsit' ? '' : location.trim(),
       notes: notes.trim(),
       people,
@@ -210,7 +202,8 @@
       shopping,
     };
     try {
-      await calendar.save(editing?.id ?? null, data);
+      const saved = await calendar.save(editing?.id ?? null, data);
+      if (editing) offerUndo(editing, saved);
       if (!editing && kind === 'trip' && needSitter) {
         await calendar.save(null, {
           title: `Pets while we're in ${data.title}`,
@@ -254,8 +247,9 @@
       >
         <Icon name="repeat" class="mt-0.5 size-4 shrink-0" />
         <span
-          >From <b>{source.name}</b>. Changes there replace the title, times, place and notes here;
-          what you add stays.</span
+          >From <b>{source.name}</b>. You can move it here, and it stays moved until the event
+          changes there; then its title, times, place and notes follow {source.name} again. What you add
+          here always stays.</span
         >
       </p>
     {/if}
@@ -294,24 +288,7 @@
       <input bind:value={title} {placeholder} required maxlength="200" autofocus={!editing} />
     </label>
 
-    <div class="flex flex-col gap-3 rounded-2xl bg-zinc-50 p-3 dark:bg-zinc-800/50">
-      <label class="flex-row items-center justify-between">
-        <span class="inline-flex items-center gap-2"
-          ><Icon name="sun" class="size-4" /> All day</span
-        >
-        <input type="checkbox" bind:checked={allDay} />
-      </label>
-      {#if allDay}
-        <div class="grid grid-cols-2 gap-2">
-          <label>From <input type="date" bind:value={startDay} required /></label>
-          <label>Until <input type="date" bind:value={endDay} min={startDay} /></label>
-        </div>
-      {:else}
-        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <label>Starts <input type="datetime-local" bind:value={startAt} required /></label>
-          <label>Ends <input type="datetime-local" bind:value={endAt} min={startAt} /></label>
-        </div>
-      {/if}
+    <WhenFields bind:when moves={!!editing}>
       <div class="grid grid-cols-2 gap-2">
         <label
           >Repeats
@@ -320,16 +297,10 @@
           </select>
         </label>
         {#if repeat}
-          <label
-            >Until <input
-              type="date"
-              bind:value={repeatUntil}
-              min={allDay ? startDay : startAt.slice(0, 10)}
-            /></label
-          >
+          <label>Until <input type="date" bind:value={repeatUntil} min={when.startDay} /></label>
         {/if}
       </div>
-    </div>
+    </WhenFields>
 
     {#if kind === 'petsit'}
       <label>

@@ -1,7 +1,9 @@
 #!/bin/sh
 # End-to-end check of a deploy: starts the app and a worker with
 # docker-compose.yml in a scratch folder, signs up the owner, creates a worker
-# account, runs one worker round and checks that the worker reported in.
+# account, runs one worker round and checks that the worker reported in. Then
+# it adds an entry, moves it to another day, restarts everything and checks
+# the move is still there: data lives in ./pb_data, not in the container.
 #
 #   CALIO_IMAGE=calio:dev CALIO_WORKER_IMAGE=calio-worker:dev deploy/smoke-test.sh
 #
@@ -75,5 +77,26 @@ docker compose run --rm worker python worker.py --once
 
 curl -sf -H "Authorization: $token" "$url/api/collections/workers/records" |
 	grep -q '"last_seen":"2' || fail "the worker did not report in"
+
+step "Moving an entry and restarting"
+user=$(curl -sf -H 'Content-Type: application/json' \
+	"$url/api/collections/users/auth-with-password" \
+	-d '{"identity":"smoke@example.com","password":"smoke-test-pw"}' |
+	sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+[ -n "$user" ] || fail "the owner cannot sign in to the app"
+id=$(curl -sf -H "Authorization: $user" -H 'Content-Type: application/json' \
+	"$url/api/collections/entries/records" \
+	-d '{"title":"Dinner","kind":"event","all_day":false,"start":"2099-12-05 17:30:00.000Z","end":"2099-12-05 20:00:00.000Z"}' |
+	sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
+[ -n "$id" ] || fail "could not add an entry"
+curl -sf -X PATCH -H "Authorization: $user" -H 'Content-Type: application/json' \
+	"$url/api/collections/entries/records/$id" \
+	-d '{"start":"2099-12-06 17:30:00.000Z","end":"2099-12-06 20:00:00.000Z"}' >/dev/null ||
+	fail "could not move the entry"
+docker compose down
+docker compose up -d app
+for _ in $(seq 1 30); do curl -sf "$url/api/health" >/dev/null && break; sleep 1; done
+curl -sf -H "Authorization: $user" "$url/api/collections/entries/records/$id" |
+	grep -q '"start":"2099-12-06 17:30:00.000Z"' || fail "the move was lost in the restart"
 
 echo "OK"

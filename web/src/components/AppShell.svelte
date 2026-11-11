@@ -11,6 +11,7 @@
   import CompanionSection from './sections/CompanionSection.svelte';
   import DocumentsSection from './sections/DocumentsSection.svelte';
   import Settings from './Settings.svelte';
+  import Toast from './Toast.svelte';
   import TodayHeader from './TodayHeader.svelte';
 
   // The signed-in app: the brand and settings at the top, today's summary,
@@ -104,3 +105,4 @@
 {#if sheets.settings}
   <Settings importing={sheets.settings === 'import'} onclose={() => (sheets.settings = false)} />
 {/if}
+<Toast />

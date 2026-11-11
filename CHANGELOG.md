@@ -5,6 +5,14 @@ What changed in each release of calio. Installs update to the newest release; se
 
 ## Unreleased
 
+- Moving things on the calendar is easier. In the month view on a computer, drag an entry to
+  another day; in the form, change the start and the end moves with it, so a trip keeps its
+  nights and a dinner its hours, or use −1 day, +1 day and +1 week. Each move ends with a
+  note saying where it went, with Undo. The form shows how long something lasts and says
+  when the end is before the start instead of failing to save.
+- Moving an event that comes from a subscribed calendar now sticks. Before, the next
+  half-hourly refresh put it back; now it follows that calendar again only when the event
+  changes there.
 - Your red panda notices the calendar: it packs a suitcase the days before a trip, sends
   postcards while you're away, plays with a visiting pet and puts on a party hat for
   birthdays. Below your habits, the household shelf shows everyone else's panda and how

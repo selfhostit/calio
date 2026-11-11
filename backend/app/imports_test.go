@@ -151,6 +151,37 @@ func TestImportFile(t *testing.T) {
 	}
 }
 
+// Moving an imported entry in Calio sticks until the event changes in its
+// own calendar; then that calendar wins.
+func TestMovedImportStays(t *testing.T) {
+	a := newApp(t)
+	_, token := addUser(t, a, "ada@example.com", "member")
+	call := server(t, a)
+	post := func(file string, content ...string) {
+		t.Helper()
+		body, ct := upload(t, nil, file)
+		code, out := call(http.MethodPost, "/api/app/import", body, map[string]string{"Authorization": token, "Content-Type": ct})
+		expect(t, code, out, http.StatusOK, content...)
+	}
+	post(familyICS, `"added":5`)
+
+	dinner := entriesByTitle(t, a)["Dinner"]
+	dinner.Set("start", "2099-12-06 17:30:00.000Z")
+	dinner.Set("end", "2099-12-06 20:00:00.000Z")
+	if err := a.Save(dinner); err != nil {
+		t.Fatal(err)
+	}
+	post(familyICS, `"updated":0`)
+	if s := entriesByTitle(t, a)["Dinner"].GetDateTime("start").String(); s != "2099-12-06 17:30:00.000Z" {
+		t.Errorf("the moved dinner went back to %s", s)
+	}
+
+	post(strings.Replace(familyICS, "DTSTART:20991205T173000Z", "DTSTART:20991205T180000Z", 1), `"updated":1`)
+	if s := entriesByTitle(t, a)["Dinner"].GetDateTime("start").String(); s != "2099-12-05 18:00:00.000Z" {
+		t.Errorf("the dinner changed in its calendar starts at %s", s)
+	}
+}
+
 func TestImportNeedsSignIn(t *testing.T) {
 	body, ct := upload(t, nil, familyICS)
 	(&tests.ApiScenario{
