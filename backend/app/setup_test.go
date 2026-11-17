@@ -139,24 +139,32 @@ func TestSetup(t *testing.T) {
 
 func TestUserRules(t *testing.T) {
 	signup := `{"email":"new@example.com","password":"password123","passwordConfirm":"password123","role":"member"}`
+	newPassword := `{"password":"newpassword1","passwordConfirm":"newpassword1"}`
 	scenarios := []struct {
 		name, as, method, url, body string
 		status                      int
-		content                     string
+		content, hidden             string
 	}{
-		{"nobody can sign up", "", http.MethodPost, "/api/collections/users/records", signup, http.StatusBadRequest, ""},
-		{"members cannot add users", "member", http.MethodPost, "/api/collections/users/records", signup, http.StatusBadRequest, ""},
-		{"the owner adds users", "owner", http.MethodPost, "/api/collections/users/records", signup, http.StatusOK, `"role":"member"`},
-		{"members rename themselves", "member", http.MethodPatch, "/api/collections/users/records/{member}", `{"name":"Bob"}`, http.StatusOK, `"name":"Bob"`},
-		{"members cannot change their role", "member", http.MethodPatch, "/api/collections/users/records/{member}", `{"role":"owner"}`, http.StatusNotFound, ""},
-		{"members cannot remove anyone", "member", http.MethodDelete, "/api/collections/users/records/{member}", "", http.StatusNotFound, ""},
-		{"members see each other", "member", http.MethodGet, "/api/collections/users/records", "", http.StatusOK, `"totalItems":2`},
-		{"signed-out visitors see nobody", "", http.MethodGet, "/api/collections/users/records", "", http.StatusOK, `"totalItems":0`},
+		{"nobody can sign up", "", http.MethodPost, "/api/collections/users/records", signup, http.StatusBadRequest, "", ""},
+		{"members cannot add users", "member", http.MethodPost, "/api/collections/users/records", signup, http.StatusBadRequest, "", ""},
+		{"the owner adds users", "owner", http.MethodPost, "/api/collections/users/records", signup, http.StatusOK, `"role":"member"`, ""},
+		{"members rename themselves", "member", http.MethodPatch, "/api/collections/users/records/{member}", `{"name":"Bob"}`, http.StatusOK, `"name":"Bob"`, ""},
+		{"members cannot change their role", "member", http.MethodPatch, "/api/collections/users/records/{member}", `{"role":"owner"}`, http.StatusNotFound, "", ""},
+		{"members cannot remove anyone", "member", http.MethodDelete, "/api/collections/users/records/{member}", "", http.StatusNotFound, "", ""},
+		{"members see each other", "member", http.MethodGet, "/api/collections/users/records", "", http.StatusOK, `"totalItems":2`, `"owner@example.com"`},
+		{"the owner sees everyone's email", "owner", http.MethodGet, "/api/collections/users/records", "", http.StatusOK, `"member@example.com"`, ""},
+		{"the owner adds verified members", "owner", http.MethodPost, "/api/collections/users/records", `{"email":"new@example.com","password":"password123","passwordConfirm":"password123","role":"member","verified":true}`, http.StatusOK, `"verified":true`, ""},
+		{"the owner sets a member's password", "owner", http.MethodPatch, "/api/collections/users/records/{member}", newPassword, http.StatusOK, `"id":`, ""},
+		{"the owner needs their own current password", "owner", http.MethodPatch, "/api/collections/users/records/{owner}", newPassword, http.StatusBadRequest, "", ""},
+		{"members cannot set someone's password", "member", http.MethodPatch, "/api/collections/users/records/{owner}", newPassword, http.StatusNotFound, "", ""},
+		{"members need their current password", "member", http.MethodPatch, "/api/collections/users/records/{member}", newPassword, http.StatusBadRequest, "", ""},
+		{"members change their password", "member", http.MethodPatch, "/api/collections/users/records/{member}", strings.Replace(newPassword, "{", `{"oldPassword":"password123",`, 1), http.StatusOK, `"id":`, ""},
+		{"signed-out visitors see nobody", "", http.MethodGet, "/api/collections/users/records", "", http.StatusOK, `"totalItems":0`, ""},
 	}
 
 	for _, sc := range scenarios {
 		a := newApp(t)
-		_, ownerToken := addUser(t, a, "owner@example.com", "owner")
+		owner, ownerToken := addUser(t, a, "owner@example.com", "owner")
 		member, memberToken := addUser(t, a, "member@example.com", "member")
 		headers := map[string]string{}
 		switch sc.as {
@@ -168,7 +176,7 @@ func TestUserRules(t *testing.T) {
 		s := tests.ApiScenario{
 			Name:           sc.name,
 			Method:         sc.method,
-			URL:            strings.ReplaceAll(sc.url, "{member}", member.Id),
+			URL:            strings.NewReplacer("{member}", member.Id, "{owner}", owner.Id).Replace(sc.url),
 			Body:           strings.NewReader(sc.body),
 			Headers:        headers,
 			ExpectedStatus: sc.status,
@@ -179,8 +187,44 @@ func TestUserRules(t *testing.T) {
 		} else {
 			s.NotExpectedContent = []string{`"id":`}
 		}
+		if sc.hidden != "" {
+			s.NotExpectedContent = append(s.NotExpectedContent, sc.hidden)
+		}
 		s.Test(t)
 	}
+}
+
+// Removing someone from the People screen keeps the household's entries they
+// made or were part of, and takes away their own habits.
+func TestRemovingSomeoneKeepsTheirEntries(t *testing.T) {
+	a := newApp(t)
+	owner, ownerToken := addUser(t, a, "owner@example.com", "owner")
+	member, _ := addUser(t, a, "member@example.com", "member")
+	entry := addEntry(t, a, map[string]any{
+		"title": "Dinner", "kind": "event", "start": "2026-12-12 18:00:00.000Z",
+		"created_by": member.Id, "people": []string{owner.Id, member.Id},
+	})
+	habit := addRecord(t, a, "habits", map[string]any{"user": member.Id, "title": "Walk", "icon": "walk", "times": 1})
+	s := tests.ApiScenario{
+		Method:         http.MethodDelete,
+		URL:            "/api/collections/users/records/" + member.Id,
+		Headers:        map[string]string{"Authorization": ownerToken},
+		ExpectedStatus: http.StatusNoContent,
+		TestAppFactory: func(testing.TB) *tests.TestApp { return a },
+		AfterTestFunc: func(t testing.TB, a *tests.TestApp, _ *http.Response) {
+			e, err := a.FindRecordById("entries", entry.Id)
+			if err != nil {
+				t.Fatal("the entry went too:", err)
+			}
+			if e.GetString("created_by") != "" || strings.Join(e.GetStringSlice("people"), ",") != owner.Id {
+				t.Errorf("created_by = %q, people = %v", e.GetString("created_by"), e.GetStringSlice("people"))
+			}
+			if _, err := a.FindRecordById("habits", habit.Id); err == nil {
+				t.Error("their habit is still there")
+			}
+		},
+	}
+	s.Test(t)
 }
 
 func TestNewInstallMakesASetupCode(t *testing.T) {
