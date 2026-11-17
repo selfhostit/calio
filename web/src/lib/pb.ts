@@ -4,7 +4,7 @@ import PocketBase, { type RecordModel } from 'pocketbase';
 export const pb = new PocketBase('/');
 
 export interface User extends RecordModel {
-  /** Only there for yourself: PocketBase leaves other people's email out. */
+  /** Only there for yourself, and for the owner: PocketBase leaves other people's email out. */
   email?: string;
   name: string;
   role: 'owner' | 'member' | '';
