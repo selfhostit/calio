@@ -10,6 +10,7 @@
   import CalendarSection from './sections/CalendarSection.svelte';
   import CompanionSection from './sections/CompanionSection.svelte';
   import DocumentsSection from './sections/DocumentsSection.svelte';
+  import People from './People.svelte';
   import Settings from './Settings.svelte';
   import Toast from './Toast.svelte';
   import TodayHeader from './TodayHeader.svelte';
@@ -102,7 +103,13 @@
     onclose={() => (sheets.entry = null)}
   />
 {/if}
-{#if sheets.settings}
-  <Settings importing={sheets.settings === 'import'} onclose={() => (sheets.settings = false)} />
+{#if sheets.settings === 'people' && session.isOwner}
+  <People onclose={() => (sheets.settings = false)} onback={() => (sheets.settings = 'open')} />
+{:else if sheets.settings}
+  <Settings
+    importing={sheets.settings === 'import'}
+    onclose={() => (sheets.settings = false)}
+    onpeople={() => (sheets.settings = 'people')}
+  />
 {/if}
 <Toast />

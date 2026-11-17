@@ -3,11 +3,11 @@ import type { Day } from './days';
 import type { Entry } from './entries';
 
 // The sheets that open over whatever section is showing: an entry (opened
-// from the calendar, or from today's summary at the top) and settings.
+// from the calendar, or from today's summary at the top) and settings, with People inside it.
 class Sheets {
   entry = $state<{ entry: Entry | null; day: Day } | null>(null);
-  /** Open, and whether to go straight to importing calendars. */
-  settings = $state<false | 'open' | 'import'>(false);
+  /** Open, and whether to go straight to importing calendars, or to People (owner only). */
+  settings = $state<false | 'open' | 'import' | 'people'>(false);
 
   /** Opens an entry; a repeat opens the entry it repeats, so edits apply to all of them. */
   open(entry: Entry) {
