@@ -7,6 +7,11 @@
 **Your household on one calendar: plans, sitting, trips and the notes a sitter needs,<br>
 running on your own hardware.**
 
+[![CI](https://github.com/selfhostit/calio/actions/workflows/ci.yml/badge.svg)](https://github.com/selfhostit/calio/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/selfhostit/calio)](https://github.com/selfhostit/calio/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/selfhostit/calio)](LICENSE)
+[![Image](https://img.shields.io/badge/image-ghcr.io%2Fselfhostit%2Fcalio-2496ED?logo=docker&logoColor=white)](https://github.com/orgs/selfhostit/packages/container/package/calio)
+
 <img src="docs/images/upcoming.png" width="200" alt="The upcoming list, with a trip in progress and a pet sitter still needed">&nbsp;
 <img src="docs/images/month.png" width="200" alt="The month view, with trips and pet sitting as bars across the days">&nbsp;
 <img src="docs/images/add.png" width="200" alt="Adding babysitting, with the household's own categories">&nbsp;
